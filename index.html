@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="floating-controls">
+        <select id="language-select" aria-label="Language">
+            <option value="ko">한국어</option>
+            <option value="en">English</option>
+        </select>
+        <button id="theme-toggle" class="chip-btn" type="button">Dark Mode</button>
+    </div>
     <div class="container">
-        <div class="top-controls">
-            <div class="language-switcher">
-                <button id="lang-en">English</button>
-                <button id="lang-ko">한국어</button>
-            </div>
-            <button id="theme-toggle" type="button">Dark Mode</button>
-        </div>
         <h1 data-i18n="title">MBTI Personality Test</h1>
         <div id="test-container">
             <div id="question-container">

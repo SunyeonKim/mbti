@@ -3,56 +3,118 @@ const translations = {
         title: "MBTI Personality Test",
         next: "Next",
         resultTitle: "Your Result",
+        resultPrefix: "Your MBTI type is:",
+        darkMode: "Dark Mode",
+        lightMode: "Light Mode",
         questions: [
             {
-                question: "You are at a party. What do you do?",
+                question: "After a long week, what sounds most recharging?",
                 answers: [
-                    { text: "Talk to everyone and make new friends.", type: "E" },
-                    { text: "Sit in a corner and observe people.", type: "I" },
-                ],
+                    { text: "Join a lively gathering with new people.", scores: { E: 2 } },
+                    { text: "Meet one or two close friends for a calm chat.", scores: { E: 1, I: 1 } },
+                    { text: "Stay home alone with a book, game, or movie.", scores: { I: 2 } },
+                    { text: "Take a quiet walk and reflect by yourself.", scores: { I: 2 } }
+                ]
             },
             {
-                question: "When you have to make a decision, you rely more on...",
+                question: "When making an important decision, what leads first?",
                 answers: [
-                    { text: "Facts and logic.", type: "S" },
-                    { text: "Your intuition and feelings.", type: "N" },
-                ],
+                    { text: "Data, evidence, and consistency.", scores: { T: 2 } },
+                    { text: "How the decision affects people emotionally.", scores: { F: 2 } },
+                    { text: "A balanced mix of fairness and logic.", scores: { T: 1, F: 1 } },
+                    { text: "My values and what feels right long-term.", scores: { F: 2 } }
+                ]
             },
             {
-                question: "You prefer to...",
+                question: "How do you usually prepare for travel?",
                 answers: [
-                    { text: "Plan everything in advance.", type: "J" },
-                    { text: "Be spontaneous and flexible.", type: "P" },
-                ],
+                    { text: "Detailed itinerary, booking, and checklist.", scores: { J: 2 } },
+                    { text: "Core plan first, then flexible choices on the way.", scores: { J: 1, P: 1 } },
+                    { text: "Decide late and improvise as things unfold.", scores: { P: 2 } },
+                    { text: "Pick only destination and mood, then wander.", scores: { P: 2 } }
+                ]
             },
             {
-                question: "When you are with your friends, you tend to...",
+                question: "When learning something new, what works best for you?",
                 answers: [
-                    { text: "Do most of the talking.", type: "E" },
-                    { text: "Do most of the listening.", type: "I" },
-                ],
+                    { text: "Step-by-step examples and practical drills.", scores: { S: 2 } },
+                    { text: "Big-picture concepts before details.", scores: { N: 2 } },
+                    { text: "A little theory, then immediate hands-on practice.", scores: { S: 1, N: 1 } },
+                    { text: "Connecting the idea to future possibilities.", scores: { N: 2 } }
+                ]
             },
             {
-                question: "You are more interested in...",
+                question: "In a team conflict, your first instinct is to...",
                 answers: [
-                    { text: "What is real and tangible.", type: "S" },
-                    { text: "What is possible and imaginable.", type: "N" },
-                ],
+                    { text: "Clarify facts and separate emotion from issue.", scores: { T: 2 } },
+                    { text: "Help everyone feel heard before solving.", scores: { F: 2 } },
+                    { text: "Find a workable compromise quickly.", scores: { T: 1, F: 1 } },
+                    { text: "Privately check in with each person first.", scores: { F: 2 } }
+                ]
             },
             {
-                question: "You are more of a...",
+                question: "At an event where you know no one, you usually...",
                 answers: [
-                    { text: "Thinker.", type: "T" },
-                    { text: "Feeler.", type: "F" },
-                ],
+                    { text: "Start conversations right away.", scores: { E: 2 } },
+                    { text: "Wait, observe, then talk to a few people.", scores: { E: 1, I: 1 } },
+                    { text: "Stick with one familiar person if possible.", scores: { I: 2 } },
+                    { text: "Leave early if the vibe drains you.", scores: { I: 2 } }
+                ]
             },
             {
-                question: "You like to...",
+                question: "For a new task with vague instructions, you prefer...",
                 answers: [
-                    { text: "Keep your options open.", type: "P" },
-                    { text: "Have a clear plan.", type: 'J' },
-                ],
+                    { text: "Clear process, examples, and known standards.", scores: { S: 2 } },
+                    { text: "Room to experiment with novel ideas.", scores: { N: 2 } },
+                    { text: "Start from a proven baseline, then improve.", scores: { S: 1, N: 1 } },
+                    { text: "Challenge assumptions and redesign it.", scores: { N: 2 } }
+                ]
             },
+            {
+                question: "When juggling many deadlines, you tend to...",
+                answers: [
+                    { text: "Prioritize, schedule, and execute in order.", scores: { J: 2 } },
+                    { text: "Track key dates but stay adaptive.", scores: { J: 1, P: 1 } },
+                    { text: "Work in bursts based on energy and urgency.", scores: { P: 2 } },
+                    { text: "Do your best under last-minute pressure.", scores: { P: 2 } }
+                ]
+            },
+            {
+                question: "A close friend is upset. You most likely...",
+                answers: [
+                    { text: "Offer practical steps to fix the issue.", scores: { T: 2 } },
+                    { text: "Listen deeply and validate feelings first.", scores: { F: 2 } },
+                    { text: "Ask what they need: advice or empathy.", scores: { T: 1, F: 1 } },
+                    { text: "Stay present until they feel emotionally safe.", scores: { F: 2 } }
+                ]
+            },
+            {
+                question: "In brainstorming, you naturally focus on...",
+                answers: [
+                    { text: "What already works in real situations.", scores: { S: 2 } },
+                    { text: "Patterns, meaning, and unseen potential.", scores: { N: 2 } },
+                    { text: "One practical idea plus one bold concept.", scores: { S: 1, N: 1 } },
+                    { text: "Future scenarios and unconventional options.", scores: { N: 2 } }
+                ]
+            },
+            {
+                question: "You get a free evening unexpectedly. You choose to...",
+                answers: [
+                    { text: "Call friends and make spontaneous plans.", scores: { E: 2 } },
+                    { text: "Do a casual social activity nearby.", scores: { E: 1, I: 1 } },
+                    { text: "Enjoy solo time and recharge quietly.", scores: { I: 2 } },
+                    { text: "Dive into a personal hobby alone.", scores: { I: 2 } }
+                ]
+            },
+            {
+                question: "At the start of a project, your default mode is...",
+                answers: [
+                    { text: "Define scope, milestones, and responsibilities.", scores: { J: 2 } },
+                    { text: "Set a direction, then iterate as you go.", scores: { J: 1, P: 1 } },
+                    { text: "Start quickly and shape the plan later.", scores: { P: 2 } },
+                    { text: "Keep options open until the last useful moment.", scores: { P: 2 } }
+                ]
+            }
         ],
         mbtiDescriptions: {
             "ISTJ": "The Inspector: Reserved and practical, they tend to be responsible, organized, and dependable.",
@@ -77,56 +139,118 @@ const translations = {
         title: "MBTI 성격 검사",
         next: "다음",
         resultTitle: "결과",
+        resultPrefix: "당신의 MBTI 유형:",
+        darkMode: "다크 모드",
+        lightMode: "화이트 모드",
         questions: [
             {
-                question: "파티에 갔을 때 당신은?",
+                question: "바쁜 한 주를 보낸 뒤, 가장 회복되는 시간은?",
                 answers: [
-                    { text: "모든 사람과 대화하며 새로운 친구를 만듭니다.", type: "E" },
-                    { text: "구석에 앉아 사람들을 관찰합니다.", type: "I" },
-                ],
+                    { text: "새로운 사람들과 활기 있게 어울린다.", scores: { E: 2 } },
+                    { text: "가까운 사람 1~2명과 차분히 대화한다.", scores: { E: 1, I: 1 } },
+                    { text: "집에서 혼자 쉬며 취미를 즐긴다.", scores: { I: 2 } },
+                    { text: "조용히 산책하며 생각을 정리한다.", scores: { I: 2 } }
+                ]
             },
             {
-                question: "결정을 내릴 때 더 의존하는 것은?",
+                question: "중요한 결정을 내릴 때 가장 먼저 보는 것은?",
                 answers: [
-                    { text: "사실과 논리", type: "S" },
-                    { text: "직감과 감정", type: "N" },
-                ],
+                    { text: "근거, 데이터, 일관성", scores: { T: 2 } },
+                    { text: "사람에게 미칠 감정적 영향", scores: { F: 2 } },
+                    { text: "논리와 배려의 균형", scores: { T: 1, F: 1 } },
+                    { text: "내 가치관과 마음의 방향", scores: { F: 2 } }
+                ]
             },
             {
-                question: "당신은...",
+                question: "여행을 준비할 때 보통 어떻게 하나요?",
                 answers: [
-                    { text: "미리 모든 것을 계획하는 것을 선호합니다.", type: "J" },
-                    { text: "즉흥적이고 유연한 것을 선호합니다.", type: "P" },
-                ],
+                    { text: "일정, 예약, 체크리스트를 상세히 만든다.", scores: { J: 2 } },
+                    { text: "큰 틀만 정하고 현지에서 유연하게 조정한다.", scores: { J: 1, P: 1 } },
+                    { text: "막판에 정하고 즉흥적으로 움직인다.", scores: { P: 2 } },
+                    { text: "목적지만 정하고 흐름대로 다닌다.", scores: { P: 2 } }
+                ]
             },
             {
-                question: "친구들과 함께 있을 때 당신은?",
+                question: "새로운 것을 배울 때 더 잘 맞는 방식은?",
                 answers: [
-                    { text: "주로 말을 많이 하는 편입니다.", type: "E" },
-                    { text: "주로 듣는 편입니다.", type: "I" },
-                ],
+                    { text: "구체적 예시와 단계별 실습", scores: { S: 2 } },
+                    { text: "전체 개념을 먼저 이해한 뒤 세부 확인", scores: { N: 2 } },
+                    { text: "이론 조금 + 바로 실전 적용", scores: { S: 1, N: 1 } },
+                    { text: "미래 활용 가능성과 연결해서 학습", scores: { N: 2 } }
+                ]
             },
             {
-                question: "당신은 다음에 더 관심이 있습니다.",
+                question: "팀 내 갈등이 생기면 먼저 하는 행동은?",
                 answers: [
-                    { text: "현실적이고 실질적인 것", type: "S" },
-                    { text: "가능성 있고 상상할 수 있는 것", type: "N" },
-                ],
+                    { text: "사실관계를 정리하고 쟁점을 분리한다.", scores: { T: 2 } },
+                    { text: "각자의 감정을 충분히 듣는다.", scores: { F: 2 } },
+                    { text: "현실적인 타협안을 빠르게 찾는다.", scores: { T: 1, F: 1 } },
+                    { text: "개별적으로 먼저 공감 대화를 한다.", scores: { F: 2 } }
+                ]
             },
             {
-                question: "당신은...",
+                question: "아는 사람이 거의 없는 모임에 가면 보통?",
                 answers: [
-                    { text: "생각하는 사람", type: "T" },
-                    { text: "느끼는 사람", type: "F" },
-                ],
+                    { text: "먼저 말을 걸며 분위기를 만든다.", scores: { E: 2 } },
+                    { text: "분위기를 보다가 몇 명과 대화한다.", scores: { E: 1, I: 1 } },
+                    { text: "익숙한 사람 옆에서 천천히 적응한다.", scores: { I: 2 } },
+                    { text: "에너지가 빨리 소모되면 일찍 나온다.", scores: { I: 2 } }
+                ]
             },
             {
-                question: "당신은...",
+                question: "설명이 애매한 새 업무를 받으면 선호하는 방식은?",
                 answers: [
-                    { text: "선택의 여지를 열어두는 것을 좋아합니다.", type: "P" },
-                    { text: "명확한 계획을 세우는 것을 좋아합니다.", type: 'J' },
-                ],
+                    { text: "명확한 절차와 참고 사례부터 찾는다.", scores: { S: 2 } },
+                    { text: "새로운 방법을 실험하며 방향을 만든다.", scores: { N: 2 } },
+                    { text: "기존 방식으로 시작하고 점진 개선한다.", scores: { S: 1, N: 1 } },
+                    { text: "전제를 의심하고 구조를 새로 설계한다.", scores: { N: 2 } }
+                ]
             },
+            {
+                question: "마감이 여러 개 겹치면 보통 어떻게 처리하나요?",
+                answers: [
+                    { text: "우선순위와 일정표를 만들어 순서대로 진행한다.", scores: { J: 2 } },
+                    { text: "핵심 일정만 잡고 상황에 맞게 조정한다.", scores: { J: 1, P: 1 } },
+                    { text: "에너지와 긴급도에 따라 몰입해서 처리한다.", scores: { P: 2 } },
+                    { text: "막판 집중력으로 해결하는 편이다.", scores: { P: 2 } }
+                ]
+            },
+            {
+                question: "친한 친구가 힘들어할 때 당신은?",
+                answers: [
+                    { text: "문제를 해결할 실질적 방법을 제안한다.", scores: { T: 2 } },
+                    { text: "먼저 충분히 듣고 감정을 공감한다.", scores: { F: 2 } },
+                    { text: "조언이 필요한지, 공감이 필요한지 먼저 묻는다.", scores: { T: 1, F: 1 } },
+                    { text: "마음이 안정될 때까지 곁을 지킨다.", scores: { F: 2 } }
+                ]
+            },
+            {
+                question: "아이디어 회의에서 자연스럽게 집중하는 것은?",
+                answers: [
+                    { text: "이미 검증된 현실적인 방안", scores: { S: 2 } },
+                    { text: "패턴, 의미, 잠재 가능성", scores: { N: 2 } },
+                    { text: "실행안 1개 + 실험안 1개를 같이 본다.", scores: { S: 1, N: 1 } },
+                    { text: "미래 시나리오와 파격적 대안", scores: { N: 2 } }
+                ]
+            },
+            {
+                question: "갑자기 저녁 시간이 비면 가장 하고 싶은 것은?",
+                answers: [
+                    { text: "사람들에게 연락해 즉석 약속을 잡는다.", scores: { E: 2 } },
+                    { text: "가벼운 소셜 활동을 짧게 즐긴다.", scores: { E: 1, I: 1 } },
+                    { text: "혼자 쉬며 에너지를 충전한다.", scores: { I: 2 } },
+                    { text: "개인 취미에 깊게 몰입한다.", scores: { I: 2 } }
+                ]
+            },
+            {
+                question: "프로젝트 시작 단계에서 기본 스타일은?",
+                answers: [
+                    { text: "범위, 일정, 역할을 먼저 명확히 정한다.", scores: { J: 2 } },
+                    { text: "큰 방향을 잡고 진행하며 다듬는다.", scores: { J: 1, P: 1 } },
+                    { text: "일단 시작하고 계획은 진행하며 맞춘다.", scores: { P: 2 } },
+                    { text: "가능성을 열어두고 마지막에 결정한다.", scores: { P: 2 } }
+                ]
+            }
         ],
         mbtiDescriptions: {
             "ISTJ": "검사관: 내성적이고 실용적이며 책임감 있고 조직적이며 신뢰할 수 있는 경향이 있습니다.",

@@ -4,8 +4,7 @@ const nextBtn = document.getElementById("next-btn");
 const resultContainer = document.getElementById("result-container");
 const resultEl = document.getElementById("result");
 const resultDescriptionEl = document.getElementById("result-description");
-const langEnBtn = document.getElementById("lang-en");
-const langKoBtn = document.getElementById("lang-ko");
+const languageSelectEl = document.getElementById("language-select");
 const themeToggleBtn = document.getElementById("theme-toggle");
 
 let currentQuestionIndex = 0;
@@ -17,22 +16,28 @@ let currentTheme = localStorage.getItem("theme")
 function applyTheme(theme) {
     currentTheme = theme;
     document.body.setAttribute("data-theme", theme);
-    themeToggleBtn.textContent = theme === "dark" ? "Light Mode" : "Dark Mode";
+    updateThemeToggleText();
     localStorage.setItem("theme", theme);
+}
+
+function updateThemeToggleText() {
+    const labelKey = currentTheme === "dark" ? "lightMode" : "darkMode";
+    themeToggleBtn.textContent = translations[currentLanguage][labelKey];
 }
 
 function setLanguage(lang) {
     currentLanguage = lang;
     document.documentElement.lang = lang;
+    languageSelectEl.value = lang;
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         el.textContent = translations[lang][key];
     });
+    updateThemeToggleText();
     startTest();
 }
 
-langEnBtn.addEventListener('click', () => setLanguage('en'));
-langKoBtn.addEventListener('click', () => setLanguage('ko'));
+languageSelectEl.addEventListener("change", (event) => setLanguage(event.target.value));
 themeToggleBtn.addEventListener("click", () => {
     applyTheme(currentTheme === "dark" ? "light" : "dark");
 });
@@ -40,6 +45,8 @@ themeToggleBtn.addEventListener("click", () => {
 function startTest() {
     currentQuestionIndex = 0;
     userAnswers = [];
+    document.getElementById("test-container").style.display = "block";
+    resultContainer.style.display = "none";
     showQuestion();
 }
 
@@ -53,7 +60,7 @@ function showQuestion() {
         const button = document.createElement("button");
         button.textContent = answer.text;
         button.onclick = () => {
-            userAnswers.push(answer.type);
+            userAnswers[currentQuestionIndex] = answer.scores;
             Array.from(answersEl.children).forEach(btn => {
                 btn.disabled = true;
                 if(btn === button) {
@@ -81,8 +88,10 @@ function calculateResult() {
         T: 0, F: 0, J: 0, P: 0
     };
 
-    userAnswers.forEach(answer => {
-        counts[answer]++;
+    userAnswers.forEach(answerScores => {
+        Object.entries(answerScores).forEach(([key, value]) => {
+            counts[key] += value;
+        });
     });
 
     let result = "";
@@ -98,7 +107,7 @@ function showResult() {
     const mbtiType = calculateResult();
     document.getElementById("test-container").style.display = "none";
     resultContainer.style.display = "block";
-    resultEl.textContent = `Your MBTI Type is: ${mbtiType}`;
+    resultEl.textContent = `${translations[currentLanguage].resultPrefix} ${mbtiType}`;
     resultDescriptionEl.textContent = translations[currentLanguage].mbtiDescriptions[mbtiType];
 }
 
