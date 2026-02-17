@@ -6,10 +6,20 @@ const resultEl = document.getElementById("result");
 const resultDescriptionEl = document.getElementById("result-description");
 const langEnBtn = document.getElementById("lang-en");
 const langKoBtn = document.getElementById("lang-ko");
+const themeToggleBtn = document.getElementById("theme-toggle");
 
 let currentQuestionIndex = 0;
 let userAnswers = [];
 let currentLanguage = 'ko';
+let currentTheme = localStorage.getItem("theme")
+    || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+function applyTheme(theme) {
+    currentTheme = theme;
+    document.body.setAttribute("data-theme", theme);
+    themeToggleBtn.textContent = theme === "dark" ? "Light Mode" : "Dark Mode";
+    localStorage.setItem("theme", theme);
+}
 
 function setLanguage(lang) {
     currentLanguage = lang;
@@ -23,6 +33,9 @@ function setLanguage(lang) {
 
 langEnBtn.addEventListener('click', () => setLanguage('en'));
 langKoBtn.addEventListener('click', () => setLanguage('ko'));
+themeToggleBtn.addEventListener("click", () => {
+    applyTheme(currentTheme === "dark" ? "light" : "dark");
+});
 
 function startTest() {
     currentQuestionIndex = 0;
@@ -44,7 +57,7 @@ function showQuestion() {
             Array.from(answersEl.children).forEach(btn => {
                 btn.disabled = true;
                 if(btn === button) {
-                    btn.style.backgroundColor = '#ddd';
+                    btn.classList.add("selected");
                 }
             });
             nextBtn.disabled = false;
@@ -89,4 +102,5 @@ function showResult() {
     resultDescriptionEl.textContent = translations[currentLanguage].mbtiDescriptions[mbtiType];
 }
 
+applyTheme(currentTheme);
 setLanguage(currentLanguage);
