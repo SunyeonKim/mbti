@@ -1,14 +1,32 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
-  <link href='/style.css' rel='stylesheet'>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Personality Test</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <button onclick="console.log('hello');">Press me</button>
-  <script defer type="text/javascript" src="/main.js"></script>
+    <div class="container">
+        <div class="language-switcher">
+            <button id="lang-en">English</button>
+            <button id="lang-ko">한국어</button>
+        </div>
+        <h1 data-i18n="title">MBTI Personality Test</h1>
+        <div id="test-container">
+            <div id="question-container">
+                <p id="question"></p>
+                <div id="answers"></div>
+            </div>
+            <button id="next-btn" data-i18n="next" disabled>Next</button>
+        </div>
+        <div id="result-container" style="display: none;">
+            <h2 data-i18n="resultTitle">Your Result</h2>
+            <p id="result"></p>
+            <p id="result-description"></p>
+        </div>
+    </div>
+    <script src="translations.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
