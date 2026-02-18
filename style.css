@@ -293,6 +293,39 @@ h1 {
     font-size: 1.2rem;
 }
 
+.share-section {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+}
+
+.share-title {
+    margin: 0 0 0.65rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.share-icons {
+    display: flex;
+    justify-content: center;
+    gap: 0.55rem;
+}
+
+.share-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--answer-bg);
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.share-btn:hover {
+    background: var(--answer-hover);
+}
+
 .coming-soon-container {
     max-width: 520px;
 }

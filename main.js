@@ -18,6 +18,8 @@ const sideNavEl = document.getElementById("side-nav");
 const progressFillEl = document.getElementById("progress-fill");
 const progressTextEl = document.getElementById("progress-text");
 const testContainer = document.getElementById("test-container");
+const defaultShareSection = document.getElementById("default-share-section");
+const resultShareSection = document.getElementById("result-share-section");
 
 const isTestPage = Boolean(
     questionEl
@@ -45,6 +47,73 @@ function getQuestions() {
 
 function getAnsweredCount() {
     return userAnswers.filter(Boolean).length;
+}
+
+function getSharePayload(scope) {
+    const shareUrl = `${window.location.origin}${window.location.pathname}`;
+    const mbtiType = calculateResult();
+    const isResult = scope === "result";
+    const text = currentLanguage === "ko"
+        ? (isResult ? `내 MBTI 결과는 ${mbtiType}! 나도 테스트해보기` : "MBTI 성격 검사를 공유해요")
+        : (isResult ? `My MBTI result is ${mbtiType}. Try this test!` : "Try this MBTI personality test.");
+    const title = currentLanguage === "ko"
+        ? (isResult ? `MBTI 결과 ${mbtiType}` : "MBTI 성격 검사")
+        : (isResult ? `MBTI Result ${mbtiType}` : "MBTI Personality Test");
+
+    return { shareUrl, text, title };
+}
+
+async function copyShareLink(scope) {
+    const { shareUrl } = getSharePayload(scope);
+    try {
+        await navigator.clipboard.writeText(shareUrl);
+    } catch (error) {
+        const temp = document.createElement("input");
+        temp.value = shareUrl;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+    }
+}
+
+function openShareWindow(url) {
+    window.open(url, "_blank", "noopener,noreferrer,width=640,height=720");
+}
+
+function shareToChannel(type, scope) {
+    const { shareUrl, text, title } = getSharePayload(scope);
+    const encodedUrl = encodeURIComponent(shareUrl);
+    const encodedText = encodeURIComponent(text);
+    const encodedTitle = encodeURIComponent(title);
+
+    if (type === "copy") {
+        copyShareLink(scope);
+        return;
+    }
+
+    if (type === "kakao") {
+        openShareWindow(`https://sharer.kakao.com/talk/friends/picker/link?url=${encodedUrl}&text=${encodedText}`);
+        return;
+    }
+
+    if (type === "x") {
+        openShareWindow(`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`);
+        return;
+    }
+
+    if (type === "naver") {
+        openShareWindow(`https://share.naver.com/web/shareView?url=${encodedUrl}&title=${encodedTitle}`);
+    }
+}
+
+function setShareVisibility({ showDefault, showResult }) {
+    if (defaultShareSection) {
+        defaultShareSection.style.display = showDefault ? "block" : "none";
+    }
+    if (resultShareSection) {
+        resultShareSection.style.display = showResult ? "block" : "none";
+    }
 }
 
 function openNav() {
@@ -152,6 +221,7 @@ function startTest() {
     testContainer.style.display = "block";
     completionContainer.style.display = "none";
     resultContainer.style.display = "none";
+    setShareVisibility({ showDefault: true, showResult: false });
     showQuestion();
 }
 
@@ -218,6 +288,7 @@ function showCompletion() {
     testContainer.style.display = "none";
     completionContainer.style.display = "block";
     resultContainer.style.display = "none";
+    setShareVisibility({ showDefault: false, showResult: false });
     updateProgress(getQuestions().length);
 }
 
@@ -226,6 +297,7 @@ function showResult() {
     testContainer.style.display = "none";
     completionContainer.style.display = "none";
     resultContainer.style.display = "block";
+    setShareVisibility({ showDefault: false, showResult: true });
     resultEl.textContent = `${translations[currentLanguage].resultPrefix} ${mbtiType}`;
     resultDescriptionEl.textContent = translations[currentLanguage].mbtiDescriptions[mbtiType];
     updateProgress(getQuestions().length);
@@ -265,6 +337,16 @@ document.addEventListener("keydown", (event) => {
 
 document.querySelectorAll(".side-nav .nav-link").forEach((el) => {
     el.addEventListener("click", closeNav);
+});
+
+document.querySelectorAll(".share-btn").forEach((el) => {
+    el.addEventListener("click", () => {
+        const type = el.getAttribute("data-share-type");
+        const scope = el.getAttribute("data-share-scope") || "default";
+        if (type) {
+            shareToChannel(type, scope);
+        }
+    });
 });
 
 if (prevBtn) {

@@ -82,6 +82,24 @@
                 <h2 data-i18n="resultTitle">Your Result</h2>
                 <p id="result"></p>
                 <p id="result-description"></p>
+                <div id="result-share-section" class="share-section" style="display: none;">
+                    <p class="share-title" data-i18n="resultShareTitle">결과 공유하기</p>
+                    <div class="share-icons">
+                        <button class="share-btn" type="button" data-share-type="copy" data-share-scope="result" aria-label="Copy link">🔗</button>
+                        <button class="share-btn" type="button" data-share-type="kakao" data-share-scope="result" aria-label="Share to KakaoTalk">K</button>
+                        <button class="share-btn" type="button" data-share-type="x" data-share-scope="result" aria-label="Share to X">X</button>
+                        <button class="share-btn" type="button" data-share-type="naver" data-share-scope="result" aria-label="Share to Naver Blog">N</button>
+                    </div>
+                </div>
+            </div>
+            <div id="default-share-section" class="share-section">
+                <p class="share-title" data-i18n="shareTitle">테스트 공유하기</p>
+                <div class="share-icons">
+                    <button class="share-btn" type="button" data-share-type="copy" data-share-scope="default" aria-label="Copy link">🔗</button>
+                    <button class="share-btn" type="button" data-share-type="kakao" data-share-scope="default" aria-label="Share to KakaoTalk">K</button>
+                    <button class="share-btn" type="button" data-share-type="x" data-share-scope="default" aria-label="Share to X">X</button>
+                    <button class="share-btn" type="button" data-share-type="naver" data-share-scope="default" aria-label="Share to Naver Blog">N</button>
+                </div>
             </div>
         </div>
     </main>
