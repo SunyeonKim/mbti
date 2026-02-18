@@ -6,10 +6,14 @@ const resultEl = document.getElementById("result");
 const resultDescriptionEl = document.getElementById("result-description");
 const languageSelectEl = document.getElementById("language-select");
 const themeSelectEl = document.getElementById("theme-select");
+const themeToggleBtn = document.getElementById("theme-toggle");
+const themeIconEl = document.getElementById("theme-icon");
 const navToggleBtn = document.getElementById("nav-toggle");
 const navCloseBtn = document.getElementById("nav-close");
 const navOverlayEl = document.getElementById("nav-overlay");
 const sideNavEl = document.getElementById("side-nav");
+const progressFillEl = document.getElementById("progress-fill");
+const progressTextEl = document.getElementById("progress-text");
 
 const isTestPage = Boolean(questionEl && answersEl && nextBtn && resultContainer && resultEl && resultDescriptionEl);
 
@@ -47,22 +51,40 @@ function applyTheme(theme) {
     if (themeSelectEl) {
         themeSelectEl.value = theme;
     }
+    if (themeIconEl) {
+        themeIconEl.textContent = theme === "dark" ? "🌙" : "☀";
+    }
     localStorage.setItem("theme", theme);
+    updateThemeControlLabels();
 }
 
 function updateThemeControlLabels() {
-    if (!themeSelectEl) {
+    const langPack = translations[currentLanguage];
+    if (themeSelectEl) {
+        const lightOption = themeSelectEl.querySelector('option[value="light"]');
+        const darkOption = themeSelectEl.querySelector('option[value="dark"]');
+        if (lightOption) {
+            lightOption.textContent = langPack.lightMode;
+        }
+        if (darkOption) {
+            darkOption.textContent = langPack.darkMode;
+        }
+    }
+    if (themeToggleBtn) {
+        const nextThemeLabel = currentTheme === "dark" ? langPack.lightMode : langPack.darkMode;
+        themeToggleBtn.setAttribute("aria-label", nextThemeLabel);
+    }
+}
+
+function updateProgress(answeredCount = currentQuestionIndex) {
+    if (!isTestPage || !progressFillEl || !progressTextEl) {
         return;
     }
-    const langPack = translations[currentLanguage];
-    const lightOption = themeSelectEl.querySelector('option[value="light"]');
-    const darkOption = themeSelectEl.querySelector('option[value="dark"]');
-    if (lightOption) {
-        lightOption.textContent = langPack.lightMode;
-    }
-    if (darkOption) {
-        darkOption.textContent = langPack.darkMode;
-    }
+    const total = translations[currentLanguage].questions.length;
+    const safeAnswered = Math.max(0, Math.min(answeredCount, total));
+    const percent = total === 0 ? 0 : Math.round((safeAnswered / total) * 100);
+    progressFillEl.style.width = `${percent}%`;
+    progressTextEl.textContent = `${percent}% (${safeAnswered}/${total})`;
 }
 
 function setLanguage(lang) {
@@ -96,6 +118,7 @@ function startTest() {
     userAnswers = [];
     document.getElementById("test-container").style.display = "block";
     resultContainer.style.display = "none";
+    updateProgress(0);
     showQuestion();
 }
 
@@ -117,9 +140,11 @@ function showQuestion() {
                 }
             });
             nextBtn.disabled = false;
+            updateProgress(currentQuestionIndex + 1);
         };
         answersEl.appendChild(button);
     });
+    updateProgress(currentQuestionIndex);
 }
 
 function calculateResult() {
@@ -149,6 +174,7 @@ function showResult() {
     resultContainer.style.display = "block";
     resultEl.textContent = `${translations[currentLanguage].resultPrefix} ${mbtiType}`;
     resultDescriptionEl.textContent = translations[currentLanguage].mbtiDescriptions[mbtiType];
+    updateProgress(translations[currentLanguage].questions.length);
 }
 
 if (languageSelectEl) {
@@ -157,6 +183,12 @@ if (languageSelectEl) {
 
 if (themeSelectEl) {
     themeSelectEl.addEventListener("change", (event) => applyTheme(event.target.value));
+}
+
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", () => {
+        applyTheme(currentTheme === "dark" ? "light" : "dark");
+    });
 }
 
 if (navToggleBtn) {
