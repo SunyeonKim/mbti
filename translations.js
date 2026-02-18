@@ -6,6 +6,12 @@ const translations = {
         resultPrefix: "Your MBTI type is:",
         darkMode: "Dark Mode",
         lightMode: "Light Mode",
+        languageLabel: "Language",
+        navMbti: "MBTI Test",
+        navNewMbti: "NEW MBTI Coming soon",
+        newMbtiTitle: "NEW MBTI Coming soon",
+        newMbtiDescription: "A new MBTI test version is under construction.",
+        goMain: "Go to MBTI Test",
         questions: [
             {
                 question: "After a long week, what sounds most recharging?",
@@ -142,6 +148,12 @@ const translations = {
         resultPrefix: "당신의 MBTI 유형:",
         darkMode: "다크 모드",
         lightMode: "화이트 모드",
+        languageLabel: "언어",
+        navMbti: "MBTI Test",
+        navNewMbti: "NEW MBTI Coming soon",
+        newMbtiTitle: "NEW MBTI Coming soon",
+        newMbtiDescription: "새로운 MBTI 테스트 버전을 준비 중입니다.",
+        goMain: "MBTI 테스트로 이동",
         questions: [
             {
                 question: "바쁜 한 주를 보낸 뒤, 가장 회복되는 시간은?",

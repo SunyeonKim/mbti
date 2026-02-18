@@ -5,44 +5,93 @@ const resultContainer = document.getElementById("result-container");
 const resultEl = document.getElementById("result");
 const resultDescriptionEl = document.getElementById("result-description");
 const languageSelectEl = document.getElementById("language-select");
-const themeToggleBtn = document.getElementById("theme-toggle");
+const themeSelectEl = document.getElementById("theme-select");
+const navToggleBtn = document.getElementById("nav-toggle");
+const navCloseBtn = document.getElementById("nav-close");
+const navOverlayEl = document.getElementById("nav-overlay");
+const sideNavEl = document.getElementById("side-nav");
+
+const isTestPage = Boolean(questionEl && answersEl && nextBtn && resultContainer && resultEl && resultDescriptionEl);
 
 let currentQuestionIndex = 0;
 let userAnswers = [];
-let currentLanguage = 'ko';
+let currentLanguage = localStorage.getItem("language") || "ko";
 let currentTheme = localStorage.getItem("theme")
     || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+function openNav() {
+    if (!sideNavEl || !navOverlayEl || !navToggleBtn) {
+        return;
+    }
+    sideNavEl.classList.add("open");
+    sideNavEl.setAttribute("aria-hidden", "false");
+    navOverlayEl.hidden = false;
+    document.body.classList.add("nav-open");
+    navToggleBtn.setAttribute("aria-expanded", "true");
+}
+
+function closeNav() {
+    if (!sideNavEl || !navOverlayEl || !navToggleBtn) {
+        return;
+    }
+    sideNavEl.classList.remove("open");
+    sideNavEl.setAttribute("aria-hidden", "true");
+    navOverlayEl.hidden = true;
+    document.body.classList.remove("nav-open");
+    navToggleBtn.setAttribute("aria-expanded", "false");
+}
 
 function applyTheme(theme) {
     currentTheme = theme;
     document.body.setAttribute("data-theme", theme);
-    updateThemeToggleText();
+    if (themeSelectEl) {
+        themeSelectEl.value = theme;
+    }
     localStorage.setItem("theme", theme);
 }
 
-function updateThemeToggleText() {
-    const labelKey = currentTheme === "dark" ? "lightMode" : "darkMode";
-    themeToggleBtn.textContent = translations[currentLanguage][labelKey];
+function updateThemeControlLabels() {
+    if (!themeSelectEl) {
+        return;
+    }
+    const langPack = translations[currentLanguage];
+    const lightOption = themeSelectEl.querySelector('option[value="light"]');
+    const darkOption = themeSelectEl.querySelector('option[value="dark"]');
+    if (lightOption) {
+        lightOption.textContent = langPack.lightMode;
+    }
+    if (darkOption) {
+        darkOption.textContent = langPack.darkMode;
+    }
 }
 
 function setLanguage(lang) {
     currentLanguage = lang;
     document.documentElement.lang = lang;
-    languageSelectEl.value = lang;
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        el.textContent = translations[lang][key];
+    localStorage.setItem("language", lang);
+
+    if (languageSelectEl) {
+        languageSelectEl.value = lang;
+    }
+
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+        const key = el.getAttribute("data-i18n");
+        if (translations[lang][key]) {
+            el.textContent = translations[lang][key];
+        }
     });
-    updateThemeToggleText();
-    startTest();
+
+    updateThemeControlLabels();
+
+    if (isTestPage) {
+        startTest();
+    }
 }
 
-languageSelectEl.addEventListener("change", (event) => setLanguage(event.target.value));
-themeToggleBtn.addEventListener("click", () => {
-    applyTheme(currentTheme === "dark" ? "light" : "dark");
-});
-
 function startTest() {
+    if (!isTestPage) {
+        return;
+    }
     currentQuestionIndex = 0;
     userAnswers = [];
     document.getElementById("test-container").style.display = "block";
@@ -56,14 +105,14 @@ function showQuestion() {
     questionEl.textContent = currentQuestion.question;
     answersEl.innerHTML = "";
 
-    currentQuestion.answers.forEach(answer => {
+    currentQuestion.answers.forEach((answer) => {
         const button = document.createElement("button");
         button.textContent = answer.text;
         button.onclick = () => {
             userAnswers[currentQuestionIndex] = answer.scores;
-            Array.from(answersEl.children).forEach(btn => {
+            Array.from(answersEl.children).forEach((btn) => {
                 btn.disabled = true;
-                if(btn === button) {
+                if (btn === button) {
                     btn.classList.add("selected");
                 }
             });
@@ -73,22 +122,13 @@ function showQuestion() {
     });
 }
 
-nextBtn.addEventListener("click", () => {
-    currentQuestionIndex++;
-    if (currentQuestionIndex < translations[currentLanguage].questions.length) {
-        showQuestion();
-    } else {
-        showResult();
-    }
-});
-
 function calculateResult() {
     const counts = {
         E: 0, I: 0, S: 0, N: 0,
         T: 0, F: 0, J: 0, P: 0
     };
 
-    userAnswers.forEach(answerScores => {
+    userAnswers.forEach((answerScores) => {
         Object.entries(answerScores).forEach(([key, value]) => {
             counts[key] += value;
         });
@@ -109,6 +149,47 @@ function showResult() {
     resultContainer.style.display = "block";
     resultEl.textContent = `${translations[currentLanguage].resultPrefix} ${mbtiType}`;
     resultDescriptionEl.textContent = translations[currentLanguage].mbtiDescriptions[mbtiType];
+}
+
+if (languageSelectEl) {
+    languageSelectEl.addEventListener("change", (event) => setLanguage(event.target.value));
+}
+
+if (themeSelectEl) {
+    themeSelectEl.addEventListener("change", (event) => applyTheme(event.target.value));
+}
+
+if (navToggleBtn) {
+    navToggleBtn.addEventListener("click", openNav);
+}
+
+if (navCloseBtn) {
+    navCloseBtn.addEventListener("click", closeNav);
+}
+
+if (navOverlayEl) {
+    navOverlayEl.addEventListener("click", closeNav);
+}
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        closeNav();
+    }
+});
+
+document.querySelectorAll(".side-nav .nav-link").forEach((el) => {
+    el.addEventListener("click", closeNav);
+});
+
+if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < translations[currentLanguage].questions.length) {
+            showQuestion();
+        } else {
+            showResult();
+        }
+    });
 }
 
 applyTheme(currentTheme);
