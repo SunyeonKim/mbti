@@ -1,7 +1,11 @@
 const translations = {
     en: {
         title: "MBTI Personality Test",
+        prev: "Previous",
         next: "Next",
+        viewResult: "View Result",
+        surveyCompleteTitle: "All Questions Completed",
+        surveyCompleteMessage: "You answered all questions. Click the button below to view your MBTI result.",
         resultTitle: "Your Result",
         resultPrefix: "Your MBTI type is:",
         darkMode: "Dark Mode",
@@ -120,6 +124,78 @@ const translations = {
                     { text: "Start quickly and shape the plan later.", scores: { P: 2 } },
                     { text: "Keep options open until the last useful moment.", scores: { P: 2 } }
                 ]
+            },
+            {
+                question: "When your daily routine suddenly changes, you tend to...",
+                answers: [
+                    { text: "Rebuild a clear plan quickly.", scores: { J: 2 } },
+                    { text: "Set key priorities and adjust as needed.", scores: { J: 1, P: 1 } },
+                    { text: "Go with the flow and adapt in real time.", scores: { P: 2 } },
+                    { text: "Enjoy the freedom of not being locked in.", scores: { P: 2 } }
+                ]
+            },
+            {
+                question: "In long conversations, what keeps you most engaged?",
+                answers: [
+                    { text: "Concrete examples and practical stories.", scores: { S: 2 } },
+                    { text: "Underlying meaning and abstract ideas.", scores: { N: 2 } },
+                    { text: "A blend of reality and possibilities.", scores: { S: 1, N: 1 } },
+                    { text: "Future trends and what could happen next.", scores: { N: 2 } }
+                ]
+            },
+            {
+                question: "In group projects, what role feels most natural?",
+                answers: [
+                    { text: "Lead discussions and keep energy high.", scores: { E: 2 } },
+                    { text: "Coordinate quietly and support from behind.", scores: { I: 2 } },
+                    { text: "Contribute where needed without taking center stage.", scores: { E: 1, I: 1 } },
+                    { text: "Focus deeply on one part and own it.", scores: { I: 2 } }
+                ]
+            },
+            {
+                question: "When receiving critical feedback, your first reaction is...",
+                answers: [
+                    { text: "Analyze the logic and improve the process.", scores: { T: 2 } },
+                    { text: "Consider feelings and relationship impact.", scores: { F: 2 } },
+                    { text: "Separate facts from tone, then improve.", scores: { T: 1, F: 1 } },
+                    { text: "Reflect on whether it aligns with your values.", scores: { F: 2 } }
+                ]
+            },
+            {
+                question: "For an upcoming weekend, you usually...",
+                answers: [
+                    { text: "Plan activities and times in advance.", scores: { J: 2 } },
+                    { text: "Plan one key thing and stay flexible.", scores: { J: 1, P: 1 } },
+                    { text: "Decide on the day based on mood.", scores: { P: 2 } },
+                    { text: "Keep it open for spontaneous opportunities.", scores: { P: 2 } }
+                ]
+            },
+            {
+                question: "When trying a new tool or app, you prefer to...",
+                answers: [
+                    { text: "Read the guide first, then follow steps.", scores: { S: 2 } },
+                    { text: "Explore freely and discover hidden features.", scores: { N: 2 } },
+                    { text: "Learn basics quickly, then experiment.", scores: { S: 1, N: 1 } },
+                    { text: "Imagine creative uses before learning details.", scores: { N: 2 } }
+                ]
+            },
+            {
+                question: "After a stressful day, you recover best by...",
+                answers: [
+                    { text: "Talking with people and releasing energy.", scores: { E: 2 } },
+                    { text: "Sharing with one trusted person.", scores: { E: 1, I: 1 } },
+                    { text: "Having quiet alone time.", scores: { I: 2 } },
+                    { text: "Turning inward and journaling or reflecting.", scores: { I: 2 } }
+                ]
+            },
+            {
+                question: "In an ethical dilemma at work, you prioritize...",
+                answers: [
+                    { text: "Consistent principles and objective standards.", scores: { T: 2 } },
+                    { text: "Human impact and care for people involved.", scores: { F: 2 } },
+                    { text: "A balanced decision with clear fairness.", scores: { T: 1, F: 1 } },
+                    { text: "Compassion, even if rules need flexibility.", scores: { F: 2 } }
+                ]
             }
         ],
         mbtiDescriptions: {
@@ -143,7 +219,11 @@ const translations = {
     },
     ko: {
         title: "MBTI 성격 검사",
+        prev: "이전",
         next: "다음",
+        viewResult: "결과보기",
+        surveyCompleteTitle: "모든 문항을 완료했어요",
+        surveyCompleteMessage: "모든 질문에 응답했습니다. 아래 버튼을 눌러 MBTI 결과를 확인하세요.",
         resultTitle: "결과",
         resultPrefix: "당신의 MBTI 유형:",
         darkMode: "다크 모드",
@@ -261,6 +341,78 @@ const translations = {
                     { text: "큰 방향을 잡고 진행하며 다듬는다.", scores: { J: 1, P: 1 } },
                     { text: "일단 시작하고 계획은 진행하며 맞춘다.", scores: { P: 2 } },
                     { text: "가능성을 열어두고 마지막에 결정한다.", scores: { P: 2 } }
+                ]
+            },
+            {
+                question: "일상이 갑자기 바뀌면 보통 어떻게 반응하나요?",
+                answers: [
+                    { text: "빠르게 새 계획을 세워 정리한다.", scores: { J: 2 } },
+                    { text: "중요한 것만 정하고 유연하게 조정한다.", scores: { J: 1, P: 1 } },
+                    { text: "상황 흐름에 맞게 즉시 적응한다.", scores: { P: 2 } },
+                    { text: "예상 밖 변화에서 자유를 느낀다.", scores: { P: 2 } }
+                ]
+            },
+            {
+                question: "긴 대화에서 더 흥미로운 주제는?",
+                answers: [
+                    { text: "구체적 사례와 실전 경험", scores: { S: 2 } },
+                    { text: "숨은 의미와 추상적 개념", scores: { N: 2 } },
+                    { text: "현실 이야기와 가능성의 균형", scores: { S: 1, N: 1 } },
+                    { text: "미래 흐름과 아직 없는 아이디어", scores: { N: 2 } }
+                ]
+            },
+            {
+                question: "팀 프로젝트에서 자연스럽게 맡는 역할은?",
+                answers: [
+                    { text: "앞에서 대화를 이끌고 분위기를 올린다.", scores: { E: 2 } },
+                    { text: "뒤에서 조율하며 실무를 탄탄히 받친다.", scores: { I: 2 } },
+                    { text: "필요한 부분에 유연하게 기여한다.", scores: { E: 1, I: 1 } },
+                    { text: "한 영역을 깊게 파고 책임진다.", scores: { I: 2 } }
+                ]
+            },
+            {
+                question: "비판적 피드백을 받았을 때 첫 반응은?",
+                answers: [
+                    { text: "논리와 구조를 점검해 개선 포인트를 찾는다.", scores: { T: 2 } },
+                    { text: "관계와 감정에 미칠 영향을 먼저 살핀다.", scores: { F: 2 } },
+                    { text: "사실과 전달 방식 모두 나눠서 본다.", scores: { T: 1, F: 1 } },
+                    { text: "내 가치와 맞는 조언인지 되짚어본다.", scores: { F: 2 } }
+                ]
+            },
+            {
+                question: "주말을 앞두고 보통 어떻게 계획하나요?",
+                answers: [
+                    { text: "활동과 시간을 미리 구체적으로 정한다.", scores: { J: 2 } },
+                    { text: "핵심 일정 하나만 정하고 유동적으로 간다.", scores: { J: 1, P: 1 } },
+                    { text: "그날 기분에 따라 즉흥적으로 정한다.", scores: { P: 2 } },
+                    { text: "빈 일정으로 두고 기회를 기다린다.", scores: { P: 2 } }
+                ]
+            },
+            {
+                question: "새로운 앱이나 도구를 사용할 때 선호 방식은?",
+                answers: [
+                    { text: "가이드를 먼저 읽고 단계대로 익힌다.", scores: { S: 2 } },
+                    { text: "직접 눌러보며 기능을 탐색한다.", scores: { N: 2 } },
+                    { text: "기본만 익히고 바로 실험해본다.", scores: { S: 1, N: 1 } },
+                    { text: "활용 아이디어부터 떠올린 뒤 파고든다.", scores: { N: 2 } }
+                ]
+            },
+            {
+                question: "스트레스가 큰 하루 후 회복 방법은?",
+                answers: [
+                    { text: "사람들과 이야기하며 에너지를 푼다.", scores: { E: 2 } },
+                    { text: "믿는 사람 한 명과 짧게 나눈다.", scores: { E: 1, I: 1 } },
+                    { text: "조용히 혼자 쉬며 리셋한다.", scores: { I: 2 } },
+                    { text: "글쓰기나 사색으로 내면을 정리한다.", scores: { I: 2 } }
+                ]
+            },
+            {
+                question: "업무에서 윤리적 딜레마가 생기면 무엇을 우선하나요?",
+                answers: [
+                    { text: "일관된 원칙과 객관적 기준", scores: { T: 2 } },
+                    { text: "관련된 사람들의 영향과 배려", scores: { F: 2 } },
+                    { text: "공정성과 현실을 함께 고려한 균형", scores: { T: 1, F: 1 } },
+                    { text: "규칙보다 사람을 살리는 유연성", scores: { F: 2 } }
                 ]
             }
         ],

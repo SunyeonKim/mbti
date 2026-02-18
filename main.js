@@ -1,6 +1,9 @@
 const questionEl = document.getElementById("question");
 const answersEl = document.getElementById("answers");
+const prevBtn = document.getElementById("prev-btn");
 const nextBtn = document.getElementById("next-btn");
+const completionContainer = document.getElementById("completion-container");
+const viewResultBtn = document.getElementById("view-result-btn");
 const resultContainer = document.getElementById("result-container");
 const resultEl = document.getElementById("result");
 const resultDescriptionEl = document.getElementById("result-description");
@@ -14,14 +17,35 @@ const navOverlayEl = document.getElementById("nav-overlay");
 const sideNavEl = document.getElementById("side-nav");
 const progressFillEl = document.getElementById("progress-fill");
 const progressTextEl = document.getElementById("progress-text");
+const testContainer = document.getElementById("test-container");
 
-const isTestPage = Boolean(questionEl && answersEl && nextBtn && resultContainer && resultEl && resultDescriptionEl);
+const isTestPage = Boolean(
+    questionEl
+    && answersEl
+    && prevBtn
+    && nextBtn
+    && completionContainer
+    && viewResultBtn
+    && resultContainer
+    && resultEl
+    && resultDescriptionEl
+    && testContainer
+);
 
 let currentQuestionIndex = 0;
 let userAnswers = [];
+let selectedAnswerIndexes = [];
 let currentLanguage = localStorage.getItem("language") || "ko";
 let currentTheme = localStorage.getItem("theme")
     || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+function getQuestions() {
+    return translations[currentLanguage].questions;
+}
+
+function getAnsweredCount() {
+    return userAnswers.filter(Boolean).length;
+}
 
 function openNav() {
     if (!sideNavEl || !navOverlayEl || !navToggleBtn) {
@@ -76,15 +100,23 @@ function updateThemeControlLabels() {
     }
 }
 
-function updateProgress(answeredCount = currentQuestionIndex) {
+function updateProgress(answeredCount = getAnsweredCount()) {
     if (!isTestPage || !progressFillEl || !progressTextEl) {
         return;
     }
-    const total = translations[currentLanguage].questions.length;
+    const total = getQuestions().length;
     const safeAnswered = Math.max(0, Math.min(answeredCount, total));
     const percent = total === 0 ? 0 : Math.round((safeAnswered / total) * 100);
     progressFillEl.style.width = `${percent}%`;
     progressTextEl.textContent = `${percent}% (${safeAnswered}/${total})`;
+}
+
+function updateQuestionButtons() {
+    if (!isTestPage) {
+        return;
+    }
+    prevBtn.disabled = currentQuestionIndex === 0;
+    nextBtn.disabled = !userAnswers[currentQuestionIndex];
 }
 
 function setLanguage(lang) {
@@ -116,35 +148,46 @@ function startTest() {
     }
     currentQuestionIndex = 0;
     userAnswers = [];
-    document.getElementById("test-container").style.display = "block";
+    selectedAnswerIndexes = [];
+    testContainer.style.display = "block";
+    completionContainer.style.display = "none";
     resultContainer.style.display = "none";
-    updateProgress(0);
     showQuestion();
 }
 
 function showQuestion() {
-    nextBtn.disabled = true;
-    const currentQuestion = translations[currentLanguage].questions[currentQuestionIndex];
+    const questions = getQuestions();
+    const currentQuestion = questions[currentQuestionIndex];
+
     questionEl.textContent = currentQuestion.question;
     answersEl.innerHTML = "";
 
-    currentQuestion.answers.forEach((answer) => {
+    currentQuestion.answers.forEach((answer, answerIndex) => {
         const button = document.createElement("button");
+        button.type = "button";
         button.textContent = answer.text;
+
+        if (selectedAnswerIndexes[currentQuestionIndex] === answerIndex) {
+            button.classList.add("selected");
+        }
+
         button.onclick = () => {
-            userAnswers[currentQuestionIndex] = answer.scores;
-            Array.from(answersEl.children).forEach((btn) => {
-                btn.disabled = true;
-                if (btn === button) {
-                    btn.classList.add("selected");
-                }
-            });
-            nextBtn.disabled = false;
-            updateProgress(currentQuestionIndex + 1);
+            if (selectedAnswerIndexes[currentQuestionIndex] === answerIndex) {
+                delete selectedAnswerIndexes[currentQuestionIndex];
+                delete userAnswers[currentQuestionIndex];
+            } else {
+                selectedAnswerIndexes[currentQuestionIndex] = answerIndex;
+                userAnswers[currentQuestionIndex] = answer.scores;
+            }
+
+            showQuestion();
         };
+
         answersEl.appendChild(button);
     });
-    updateProgress(currentQuestionIndex);
+
+    updateQuestionButtons();
+    updateProgress();
 }
 
 function calculateResult() {
@@ -154,6 +197,9 @@ function calculateResult() {
     };
 
     userAnswers.forEach((answerScores) => {
+        if (!answerScores) {
+            return;
+        }
         Object.entries(answerScores).forEach(([key, value]) => {
             counts[key] += value;
         });
@@ -168,13 +214,21 @@ function calculateResult() {
     return result;
 }
 
+function showCompletion() {
+    testContainer.style.display = "none";
+    completionContainer.style.display = "block";
+    resultContainer.style.display = "none";
+    updateProgress(getQuestions().length);
+}
+
 function showResult() {
     const mbtiType = calculateResult();
-    document.getElementById("test-container").style.display = "none";
+    testContainer.style.display = "none";
+    completionContainer.style.display = "none";
     resultContainer.style.display = "block";
     resultEl.textContent = `${translations[currentLanguage].resultPrefix} ${mbtiType}`;
     resultDescriptionEl.textContent = translations[currentLanguage].mbtiDescriptions[mbtiType];
-    updateProgress(translations[currentLanguage].questions.length);
+    updateProgress(getQuestions().length);
 }
 
 if (languageSelectEl) {
@@ -213,12 +267,36 @@ document.querySelectorAll(".side-nav .nav-link").forEach((el) => {
     el.addEventListener("click", closeNav);
 });
 
+if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            showQuestion();
+        }
+    });
+}
+
 if (nextBtn) {
     nextBtn.addEventListener("click", () => {
-        currentQuestionIndex++;
-        if (currentQuestionIndex < translations[currentLanguage].questions.length) {
+        if (!userAnswers[currentQuestionIndex]) {
+            return;
+        }
+
+        if (currentQuestionIndex < getQuestions().length - 1) {
+            currentQuestionIndex++;
             showQuestion();
-        } else {
+            return;
+        }
+
+        if (getAnsweredCount() === getQuestions().length) {
+            showCompletion();
+        }
+    });
+}
+
+if (viewResultBtn) {
+    viewResultBtn.addEventListener("click", () => {
+        if (getAnsweredCount() === getQuestions().length) {
             showResult();
         }
     });

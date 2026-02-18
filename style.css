@@ -252,6 +252,8 @@ h1 {
 }
 
 #next-btn,
+#prev-btn,
+#view-result-btn,
 .primary-link {
     display: inline-block;
     background-color: var(--primary);
@@ -265,8 +267,22 @@ h1 {
 }
 
 #next-btn:hover,
+#prev-btn:hover,
+#view-result-btn:hover,
 .primary-link:hover {
     background-color: var(--primary-hover);
+}
+
+.question-actions {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+}
+
+#next-btn:disabled,
+#prev-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 #result-container {

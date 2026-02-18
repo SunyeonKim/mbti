@@ -68,7 +68,15 @@
                     <p id="question"></p>
                     <div id="answers"></div>
                 </div>
-                <button id="next-btn" data-i18n="next" disabled>Next</button>
+                <div class="question-actions">
+                    <button id="prev-btn" type="button" data-i18n="prev" disabled>Previous</button>
+                    <button id="next-btn" type="button" data-i18n="next" disabled>Next</button>
+                </div>
+            </div>
+            <div id="completion-container" style="display: none;">
+                <h2 data-i18n="surveyCompleteTitle">All Questions Completed</h2>
+                <p data-i18n="surveyCompleteMessage">You answered all questions. Click below to view your MBTI result.</p>
+                <button id="view-result-btn" type="button" data-i18n="viewResult">View Result</button>
             </div>
             <div id="result-container" style="display: none;">
                 <h2 data-i18n="resultTitle">Your Result</h2>
