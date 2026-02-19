@@ -30,6 +30,11 @@ const dynamicNavLinksEl = document.getElementById("dynamic-nav-links");
 const noTestsMessageEl = document.getElementById("no-tests-message");
 const activeTestTitleEl = document.getElementById("active-test-title");
 const backToListBtn = document.getElementById("back-to-list-btn");
+const recentResultsListEl = document.getElementById("recent-results-list");
+const noRecentResultsMessageEl = document.getElementById("no-recent-results-message");
+
+const RECENT_RESULTS_STORAGE_KEY = "recentTestResultsV1";
+const MAX_RECENT_RESULTS = 5;
 
 const isTestPage = Boolean(
     questionEl
@@ -54,6 +59,33 @@ let selectedAnswerIndexes = [];
 let currentLanguage = localStorage.getItem("language") || "ko";
 let currentTheme = localStorage.getItem("theme")
     || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+const RecentResultsStore = {
+    load() {
+        try {
+            const raw = localStorage.getItem(RECENT_RESULTS_STORAGE_KEY);
+            const parsed = JSON.parse(raw || "[]");
+            if (!Array.isArray(parsed)) {
+                return [];
+            }
+            return parsed.filter((item) => item && typeof item === "object" && item.id && item.testId);
+        } catch (error) {
+            console.warn("Failed to parse recent results:", error);
+            return [];
+        }
+    },
+    save(items) {
+        localStorage.setItem(RECENT_RESULTS_STORAGE_KEY, JSON.stringify(items));
+    },
+    add(entry) {
+        const current = this.load().filter((item) => item.testId !== entry.testId);
+        const next = [entry, ...current].slice(0, 20);
+        this.save(next);
+    },
+    getRecent(limit = MAX_RECENT_RESULTS) {
+        return this.load().slice(0, limit);
+    }
+};
 
 function getLangPack() {
     if (typeof translations === "undefined") {
@@ -377,6 +409,71 @@ function renderTestCards() {
     });
 }
 
+function buildResultSummary(text) {
+    const normalized = String(text || "").replace(/\s+/g, " ").trim();
+    if (!normalized) {
+        return "결과 요약이 준비되지 않았습니다.";
+    }
+    return normalized.length > 72 ? `${normalized.slice(0, 72)}...` : normalized;
+}
+
+function saveRecentResult(test, mbtiType, description) {
+    if (!test || !test.id) {
+        return;
+    }
+    const now = Date.now();
+    const recordId = `${test.id}-${now}`;
+    RecentResultsStore.add({
+        id: recordId,
+        testId: test.id,
+        testTitle: test.cardTitle || test.title || "테스트",
+        resultType: mbtiType,
+        summary: buildResultSummary(description),
+        completedAt: now
+    });
+}
+
+function renderRecentResults() {
+    if (!recentResultsListEl || !noRecentResultsMessageEl) {
+        return;
+    }
+
+    const recent = RecentResultsStore.getRecent(MAX_RECENT_RESULTS);
+    recentResultsListEl.innerHTML = "";
+
+    if (!recent.length) {
+        noRecentResultsMessageEl.hidden = false;
+        return;
+    }
+
+    noRecentResultsMessageEl.hidden = true;
+
+    recent.forEach((item) => {
+        const card = document.createElement("a");
+        card.className = "test-card recent-result-card";
+        card.href = `result.html?record=${encodeURIComponent(item.id)}`;
+
+        const body = document.createElement("div");
+        body.className = "recent-result-body";
+
+        const title = document.createElement("p");
+        title.className = "test-card-title";
+        title.textContent = item.testTitle;
+
+        const type = document.createElement("p");
+        type.className = "recent-result-type";
+        type.textContent = item.resultType;
+
+        const summary = document.createElement("p");
+        summary.className = "recent-result-summary";
+        summary.textContent = item.summary;
+
+        body.append(title, type, summary);
+        card.appendChild(body);
+        recentResultsListEl.appendChild(card);
+    });
+}
+
 function setLanguage(lang) {
     currentLanguage = lang;
     document.documentElement.lang = lang;
@@ -531,6 +628,8 @@ function showResult() {
 
     resultEl.textContent = `${langPack.resultPrefix || "Your MBTI type is:"} ${mbtiType}`;
     resultDescriptionEl.textContent = descriptionMap[mbtiType] || "";
+    saveRecentResult(currentTest, mbtiType, descriptionMap[mbtiType] || "");
+    renderRecentResults();
 
     if (resultGuideTextEl) {
         resultGuideTextEl.textContent = currentTest.resultGuideText || "";
@@ -635,6 +734,7 @@ async function initPage() {
     await loadTests();
     renderDynamicNav();
     renderTestCards();
+    renderRecentResults();
 
     const testIdFromQuery = new URLSearchParams(window.location.search).get("test");
     if (testIdFromQuery && tests.some((test) => test.id === testIdFromQuery)) {
