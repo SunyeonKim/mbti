@@ -1,5 +1,5 @@
 (function initFirebase() {
-    const decodedApiKey = atob("QUl6YVNZQlFXYUVpWDczalpvRV9qelZ3YVZYdnJjcjBEZnBaLV9F");
+    const decodedApiKey = "AIzaSyBQWaEiX73jZ0E_jzVwaVXvrcr0DfpZ-_E";
 
     const firebaseConfig = {
         apiKey: decodedApiKey,
