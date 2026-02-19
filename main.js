@@ -27,8 +27,6 @@ const testListViewEl = document.getElementById("test-list-view");
 const testViewEl = document.getElementById("test-view");
 const testCardGridEl = document.getElementById("test-card-grid");
 const testFilterButtons = document.querySelectorAll("[data-test-filter]");
-const popularOrderToggleBtn = document.getElementById("popular-order-toggle");
-const latestOrderToggleBtn = document.getElementById("latest-order-toggle");
 const dynamicNavLinksEl = document.getElementById("dynamic-nav-links");
 const noTestsMessageEl = document.getElementById("no-tests-message");
 const activeTestTitleEl = document.getElementById("active-test-title");
@@ -514,20 +512,16 @@ function getFilteredTests() {
 
 function updateFilterControls() {
     testFilterButtons.forEach((button) => {
-        const isActive = button.dataset.testFilter === activeTestFilter;
+        const mode = button.dataset.testFilter || "all";
+        const isActive = mode === activeTestFilter;
+        if (mode === "popular") {
+            button.textContent = popularSortOrder === "desc" ? "인기순↓" : "인기순↑";
+        } else if (mode === "latest") {
+            button.textContent = latestSortOrder === "desc" ? "최신순↓" : "최신순↑";
+        }
         button.classList.toggle("active", isActive);
         button.setAttribute("aria-pressed", isActive ? "true" : "false");
     });
-
-    if (popularOrderToggleBtn) {
-        popularOrderToggleBtn.hidden = activeTestFilter !== "popular";
-        popularOrderToggleBtn.textContent = popularSortOrder === "desc" ? "조회수 높은순" : "조회수 낮은순";
-    }
-
-    if (latestOrderToggleBtn) {
-        latestOrderToggleBtn.hidden = activeTestFilter !== "latest";
-        latestOrderToggleBtn.textContent = latestSortOrder === "desc" ? "등록일 최신순" : "등록일 오래된순";
-    }
 }
 
 async function incrementTestViewCount(testId) {
@@ -875,27 +869,27 @@ if (backToListBtn) {
 testFilterButtons.forEach((button) => {
     button.addEventListener("click", () => {
         const mode = button.dataset.testFilter || "all";
-        activeTestFilter = mode;
+        if (mode === "popular") {
+            if (activeTestFilter === "popular") {
+                popularSortOrder = popularSortOrder === "desc" ? "asc" : "desc";
+            } else {
+                popularSortOrder = "desc";
+                activeTestFilter = "popular";
+            }
+        } else if (mode === "latest") {
+            if (activeTestFilter === "latest") {
+                latestSortOrder = latestSortOrder === "desc" ? "asc" : "desc";
+            } else {
+                latestSortOrder = "desc";
+                activeTestFilter = "latest";
+            }
+        } else {
+            activeTestFilter = mode;
+        }
         updateFilterControls();
         renderTestCards();
     });
 });
-
-if (popularOrderToggleBtn) {
-    popularOrderToggleBtn.addEventListener("click", () => {
-        popularSortOrder = popularSortOrder === "desc" ? "asc" : "desc";
-        updateFilterControls();
-        renderTestCards();
-    });
-}
-
-if (latestOrderToggleBtn) {
-    latestOrderToggleBtn.addEventListener("click", () => {
-        latestSortOrder = latestSortOrder === "desc" ? "asc" : "desc";
-        updateFilterControls();
-        renderTestCards();
-    });
-}
 
 async function initPage() {
     applyTheme(currentTheme);
