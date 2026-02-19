@@ -30,8 +30,9 @@ const dynamicNavLinksEl = document.getElementById("dynamic-nav-links");
 const noTestsMessageEl = document.getElementById("no-tests-message");
 const activeTestTitleEl = document.getElementById("active-test-title");
 const backToListBtn = document.getElementById("back-to-list-btn");
+const recentResultsSectionEl = document.getElementById("recent-results-section");
 const recentResultsListEl = document.getElementById("recent-results-list");
-const noRecentResultsMessageEl = document.getElementById("no-recent-results-message");
+const toastEl = document.getElementById("toast");
 
 const RECENT_RESULTS_STORAGE_KEY = "recentTestResultsV1";
 const MAX_RECENT_RESULTS = 5;
@@ -59,6 +60,7 @@ let selectedAnswerIndexes = [];
 let currentLanguage = localStorage.getItem("language") || "ko";
 let currentTheme = localStorage.getItem("theme")
     || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+let toastTimer = null;
 
 const RecentResultsStore = {
     load() {
@@ -235,15 +237,39 @@ function getSharePayload(scope) {
 async function copyShareLink(scope) {
     const { shareUrl } = getSharePayload(scope);
     try {
-        await navigator.clipboard.writeText(shareUrl);
+        await copyTextToClipboard(shareUrl);
     } catch (error) {
-        const temp = document.createElement("input");
-        temp.value = shareUrl;
-        document.body.appendChild(temp);
-        temp.select();
-        document.execCommand("copy");
-        document.body.removeChild(temp);
+        console.warn("Failed to copy share link:", error);
     }
+}
+
+async function copyTextToClipboard(text) {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        await navigator.clipboard.writeText(text);
+        return;
+    }
+    const temp = document.createElement("input");
+    temp.value = text;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+}
+
+function showToast(message) {
+    if (!toastEl) {
+        return;
+    }
+    toastEl.textContent = message;
+    toastEl.hidden = false;
+    toastEl.classList.add("show");
+    if (toastTimer) {
+        clearTimeout(toastTimer);
+    }
+    toastTimer = setTimeout(() => {
+        toastEl.classList.remove("show");
+        toastEl.hidden = true;
+    }, 1800);
 }
 
 function openShareWindow(url) {
@@ -351,16 +377,19 @@ function renderDynamicNav() {
     }
 
     dynamicNavLinksEl.innerHTML = "";
-
-    tests.forEach((test) => {
+    [
+        { text: "홈", href: "index.html" },
+        { text: "서비스 소개", href: "service.html" },
+        { text: "개인정보처리방침", href: "privacy.html" },
+        { text: "이용약관", href: "terms.html" },
+        { text: "문의하기", href: "contact.html" }
+    ].forEach((item) => {
         const link = document.createElement("a");
-        link.className = "nav-link nav-test-link";
-        link.href = `index.html?test=${encodeURIComponent(test.id)}`;
-        link.textContent = test.navTitle;
-        link.addEventListener("click", (event) => {
-            event.preventDefault();
+        link.className = "nav-link";
+        link.href = item.href;
+        link.textContent = item.text;
+        link.addEventListener("click", () => {
             closeNav();
-            startTestById(test.id);
         });
         dynamicNavLinksEl.appendChild(link);
     });
@@ -381,9 +410,11 @@ function renderTestCards() {
     noTestsMessageEl.hidden = true;
 
     tests.forEach((test) => {
-        const card = document.createElement("button");
-        card.type = "button";
+        const card = document.createElement("article");
         card.className = "test-card";
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        card.setAttribute("aria-label", `${test.cardTitle} 테스트 시작`);
 
         const thumb = document.createElement("div");
         thumb.className = "test-card-thumb";
@@ -397,14 +428,42 @@ function renderTestCards() {
             thumb.textContent = "No Image";
         }
 
+        const titleRow = document.createElement("div");
+        titleRow.className = "test-card-title-row";
+
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "copy-link-btn";
+        copyBtn.setAttribute("aria-label", `${test.cardTitle} 링크 복사`);
+        copyBtn.textContent = "📎";
+        copyBtn.addEventListener("click", async (event) => {
+            event.stopPropagation();
+            const params = new URLSearchParams(window.location.search);
+            params.set("test", test.id);
+            const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+            try {
+                await copyTextToClipboard(url);
+                showToast("링크 복사가 완료되었습니다.");
+            } catch (error) {
+                showToast("링크 복사에 실패했습니다.");
+            }
+        });
+
         const title = document.createElement("p");
         title.className = "test-card-title";
         title.textContent = test.cardTitle;
 
+        titleRow.append(copyBtn, title);
         card.appendChild(thumb);
-        card.appendChild(title);
+        card.appendChild(titleRow);
 
         card.addEventListener("click", () => startTestById(test.id));
+        card.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                startTestById(test.id);
+            }
+        });
         testCardGridEl.appendChild(card);
     });
 }
@@ -434,7 +493,7 @@ function saveRecentResult(test, mbtiType, description) {
 }
 
 function renderRecentResults() {
-    if (!recentResultsListEl || !noRecentResultsMessageEl) {
+    if (!recentResultsListEl || !recentResultsSectionEl) {
         return;
     }
 
@@ -442,11 +501,11 @@ function renderRecentResults() {
     recentResultsListEl.innerHTML = "";
 
     if (!recent.length) {
-        noRecentResultsMessageEl.hidden = false;
+        recentResultsSectionEl.hidden = true;
         return;
     }
 
-    noRecentResultsMessageEl.hidden = true;
+    recentResultsSectionEl.hidden = false;
 
     recent.forEach((item) => {
         const card = document.createElement("a");
