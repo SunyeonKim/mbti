@@ -581,6 +581,14 @@ function buildResultSummary(text) {
     return normalized;
 }
 
+function buildRecentCardSummary(text, maxLength = 75) {
+    const normalized = String(text || "").replace(/\s+/g, " ").trim();
+    if (!normalized) {
+        return "결과 요약이 준비되지 않았습니다.";
+    }
+    return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized;
+}
+
 function saveRecentResult(test, mbtiType, description) {
     if (!test || !test.id) {
         return;
@@ -633,7 +641,7 @@ function renderRecentResults() {
 
         const summary = document.createElement("p");
         summary.className = "recent-result-summary";
-        summary.textContent = item.summary;
+        summary.textContent = buildRecentCardSummary(item.summary, 75);
 
         body.append(title, type, summary);
         card.appendChild(body);
