@@ -172,7 +172,7 @@ body.nav-open {
 }
 
 #language-select,
-input,
+input:not([type="checkbox"]),
 select,
 textarea {
     border: 1px solid var(--border);
@@ -240,6 +240,42 @@ p {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     gap: 1rem;
+}
+
+.test-filter-controls {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.filter-chip-row,
+.filter-toggle-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-chip,
+.filter-toggle-btn {
+    border: 1px solid var(--border);
+    background: var(--answer-bg);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+.filter-chip.active {
+    background: var(--primary);
+    color: var(--container-bg);
+    border-color: var(--primary);
+}
+
+.filter-chip:hover,
+.filter-toggle-btn:hover {
+    background: var(--answer-hover) !important;
+    color: var(--text) !important;
 }
 
 .test-card {
@@ -567,6 +603,19 @@ button:hover,
     flex-direction: column;
     gap: 0.35rem;
     font-weight: 600;
+}
+
+.admin-checkbox-label {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 0.5rem !important;
+    font-weight: 600;
+}
+
+.admin-checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
 }
 
 .admin-top-row {

@@ -26,6 +26,9 @@ const resultShareSection = document.getElementById("result-share-section");
 const testListViewEl = document.getElementById("test-list-view");
 const testViewEl = document.getElementById("test-view");
 const testCardGridEl = document.getElementById("test-card-grid");
+const testFilterButtons = document.querySelectorAll("[data-test-filter]");
+const popularOrderToggleBtn = document.getElementById("popular-order-toggle");
+const latestOrderToggleBtn = document.getElementById("latest-order-toggle");
 const dynamicNavLinksEl = document.getElementById("dynamic-nav-links");
 const noTestsMessageEl = document.getElementById("no-tests-message");
 const activeTestTitleEl = document.getElementById("active-test-title");
@@ -61,6 +64,9 @@ let currentLanguage = localStorage.getItem("language") || "ko";
 let currentTheme = localStorage.getItem("theme")
     || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 let toastTimer = null;
+let activeTestFilter = "all";
+let popularSortOrder = "desc";
+let latestSortOrder = "desc";
 
 const RecentResultsStore = {
     load() {
@@ -120,12 +126,15 @@ function buildFallbackTest() {
         title: langPack.title || "MBTI 성격 검사",
         cardTitle: langPack.title || "MBTI 성격 검사",
         navTitle: langPack.title || "MBTI 성격 검사",
+        isRecommended: false,
+        viewCount: 0,
         thumbnail: "",
         resultGuideText: "",
         resultImage: "",
         mbtiDescriptions: langPack.mbtiDescriptions || {},
         questions,
-        isFallback: true
+        isFallback: true,
+        createdAtMs: 0
     };
 }
 
@@ -179,6 +188,8 @@ function sanitizeRemoteTest(doc) {
         title: String(data.title || "테스트"),
         cardTitle: String(data.cardTitle || data.title || "테스트"),
         navTitle: String(data.navTitle || data.cardTitle || data.title || "테스트"),
+        isRecommended: Boolean(data.isRecommended),
+        viewCount: Math.max(0, Number(data.viewCount) || 0),
         thumbnail: String(data.thumbnail || ""),
         resultGuideText: String(data.resultGuideText || ""),
         resultImage: String(data.resultImage || ""),
@@ -401,15 +412,16 @@ function renderTestCards() {
     }
 
     testCardGridEl.innerHTML = "";
+    const displayTests = getFilteredTests();
 
-    if (!tests.length) {
+    if (!displayTests.length) {
         noTestsMessageEl.hidden = false;
         return;
     }
 
     noTestsMessageEl.hidden = true;
 
-    tests.forEach((test) => {
+    displayTests.forEach((test) => {
         const card = document.createElement("article");
         card.className = "test-card";
         card.tabIndex = 0;
@@ -466,6 +478,78 @@ function renderTestCards() {
         });
         testCardGridEl.appendChild(card);
     });
+}
+
+function getFilteredTests() {
+    const list = [...tests];
+
+    if (activeTestFilter === "recommended") {
+        return list
+            .filter((test) => test.isRecommended)
+            .sort((a, b) => b.createdAtMs - a.createdAtMs);
+    }
+
+    if (activeTestFilter === "popular") {
+        return list.sort((a, b) => {
+            const viewDiff = popularSortOrder === "desc"
+                ? b.viewCount - a.viewCount
+                : a.viewCount - b.viewCount;
+            if (viewDiff !== 0) {
+                return viewDiff;
+            }
+            return b.createdAtMs - a.createdAtMs;
+        });
+    }
+
+    if (activeTestFilter === "latest") {
+        return list.sort((a, b) => (
+            latestSortOrder === "desc"
+                ? b.createdAtMs - a.createdAtMs
+                : a.createdAtMs - b.createdAtMs
+        ));
+    }
+
+    return list.sort((a, b) => b.createdAtMs - a.createdAtMs);
+}
+
+function updateFilterControls() {
+    testFilterButtons.forEach((button) => {
+        const isActive = button.dataset.testFilter === activeTestFilter;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+
+    if (popularOrderToggleBtn) {
+        popularOrderToggleBtn.hidden = activeTestFilter !== "popular";
+        popularOrderToggleBtn.textContent = popularSortOrder === "desc" ? "조회수 높은순" : "조회수 낮은순";
+    }
+
+    if (latestOrderToggleBtn) {
+        latestOrderToggleBtn.hidden = activeTestFilter !== "latest";
+        latestOrderToggleBtn.textContent = latestSortOrder === "desc" ? "등록일 최신순" : "등록일 오래된순";
+    }
+}
+
+async function incrementTestViewCount(testId) {
+    const target = tests.find((test) => test.id === testId);
+    if (target) {
+        target.viewCount = Math.max(0, Number(target.viewCount) || 0) + 1;
+    }
+
+    const services = window.firebaseServices || {};
+    const firebaseGlobal = window.firebase;
+    if (!services.db || !firebaseGlobal || !firebaseGlobal.firestore || !firebaseGlobal.firestore.FieldValue) {
+        return;
+    }
+
+    try {
+        await services.db.collection("tests").doc(testId).update({
+            viewCount: firebaseGlobal.firestore.FieldValue.increment(1),
+            updatedAt: firebaseGlobal.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        console.warn("Failed to increment view count:", error);
+    }
 }
 
 function buildResultSummary(text) {
@@ -567,6 +651,7 @@ function setLanguage(lang) {
 function showListView() {
     testListViewEl.hidden = false;
     testViewEl.hidden = true;
+    renderTestCards();
     const url = new URL(window.location.href);
     url.searchParams.delete("test");
     window.history.replaceState({}, "", url);
@@ -576,6 +661,9 @@ function startTestById(testId) {
     const found = tests.find((test) => test.id === testId);
     if (!found) {
         return;
+    }
+    if (!found.isFallback) {
+        incrementTestViewCount(found.id);
     }
 
     currentTest = found;
@@ -784,10 +872,36 @@ if (backToListBtn) {
     backToListBtn.addEventListener("click", showListView);
 }
 
+testFilterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        const mode = button.dataset.testFilter || "all";
+        activeTestFilter = mode;
+        updateFilterControls();
+        renderTestCards();
+    });
+});
+
+if (popularOrderToggleBtn) {
+    popularOrderToggleBtn.addEventListener("click", () => {
+        popularSortOrder = popularSortOrder === "desc" ? "asc" : "desc";
+        updateFilterControls();
+        renderTestCards();
+    });
+}
+
+if (latestOrderToggleBtn) {
+    latestOrderToggleBtn.addEventListener("click", () => {
+        latestSortOrder = latestSortOrder === "desc" ? "asc" : "desc";
+        updateFilterControls();
+        renderTestCards();
+    });
+}
+
 async function initPage() {
     applyTheme(currentTheme);
     setLanguage(currentLanguage);
     renderDynamicNav();
+    updateFilterControls();
     if (!isTestPage) {
         return;
     }

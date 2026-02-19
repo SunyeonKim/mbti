@@ -67,6 +67,18 @@
                 <section class="content-section" aria-labelledby="available-tests-title">
                     <h2 id="available-tests-title">진행 가능한 테스트</h2>
                     <div id="test-card-grid" class="test-card-grid"></div>
+                    <div class="test-filter-controls" aria-label="테스트 정렬 및 필터">
+                        <div class="filter-chip-row">
+                            <button type="button" class="filter-chip active" data-test-filter="all">전체</button>
+                            <button type="button" class="filter-chip" data-test-filter="popular">인기순</button>
+                            <button type="button" class="filter-chip" data-test-filter="latest">최신순</button>
+                            <button type="button" class="filter-chip" data-test-filter="recommended">추천순</button>
+                        </div>
+                        <div class="filter-toggle-row">
+                            <button id="popular-order-toggle" type="button" class="filter-toggle-btn" hidden>조회수 높은순</button>
+                            <button id="latest-order-toggle" type="button" class="filter-toggle-btn" hidden>등록일 최신순</button>
+                        </div>
+                    </div>
                     <p id="no-tests-message" class="empty-message" hidden>등록된 테스트가 없습니다.</p>
                 </section>
             </section>

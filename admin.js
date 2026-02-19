@@ -28,6 +28,7 @@ const editorViewTitleEl = document.getElementById("editor-view-title");
 const testTitleEl = document.getElementById("test-title");
 const cardTitleEl = document.getElementById("card-title");
 const navTitleEl = document.getElementById("nav-title");
+const isRecommendedEl = document.getElementById("is-recommended");
 const targetQuestionCountEl = document.getElementById("question-count-target");
 const applyQuestionCountBtn = document.getElementById("apply-question-count");
 const cardThumbnailInputEl = document.getElementById("card-thumbnail-input");
@@ -432,6 +433,9 @@ function resetEditor() {
     testTitleEl.value = "";
     cardTitleEl.value = "";
     navTitleEl.value = "";
+    if (isRecommendedEl) {
+        isRecommendedEl.checked = false;
+    }
     resultGuideTextEl.value = "";
     questionListEl.innerHTML = "";
     state.cardThumbnailData = "";
@@ -490,6 +494,9 @@ function loadEditorFromData(data) {
     testTitleEl.value = String(data.title || "");
     cardTitleEl.value = String(data.cardTitle || "");
     navTitleEl.value = String(data.navTitle || "");
+    if (isRecommendedEl) {
+        isRecommendedEl.checked = Boolean(data.isRecommended);
+    }
     resultGuideTextEl.value = String(data.resultGuideText || "");
 
     state.cardThumbnailData = String(data.thumbnail || "");
@@ -555,6 +562,7 @@ async function saveTest() {
     const title = String(testTitleEl.value || "").trim();
     const cardTitle = String(cardTitleEl.value || "").trim();
     const navTitle = String(navTitleEl.value || "").trim();
+    const isRecommended = Boolean(isRecommendedEl && isRecommendedEl.checked);
     const resultGuideText = String(resultGuideTextEl.value || "").trim();
 
     if (!title) {
@@ -579,6 +587,7 @@ async function saveTest() {
         title,
         cardTitle,
         navTitle: navTitle || cardTitle,
+        isRecommended,
         thumbnail: state.cardThumbnailData,
         resultGuideText,
         resultImage: state.resultImageData,
@@ -597,6 +606,7 @@ async function saveTest() {
         } else {
             await db.collection("tests").add({
                 ...payload,
+                viewCount: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 createdById: getCurrentAdminId()
             });
@@ -706,6 +716,7 @@ function renderListRows() {
                     title: copiedTitle,
                     cardTitle: copiedCardTitle,
                     navTitle: item.navTitle ? `${String(item.navTitle)} (복사본)` : copiedCardTitle,
+                    viewCount: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     createdById: getCurrentAdminId(),
@@ -845,6 +856,8 @@ async function ensureDefaultMbtiTest() {
             title: "MBTI 성격 검사",
             cardTitle: "MBTI 성격 검사",
             navTitle: "MBTI 성격 검사",
+            isRecommended: false,
+            viewCount: 0,
             thumbnail: "",
             resultGuideText: "",
             resultImage: "",
