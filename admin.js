@@ -1,6 +1,6 @@
 const ADMIN_ID = "namu";
 const ADMIN_PW = "namu!@#123";
-const ADMIN_EMAIL_DOMAIN = "mbti.local";
+const ADMIN_EMAIL_DOMAIN = "namu-23d3b.firebaseapp.com";
 const MBTI_TYPES = ["", "E", "I", "N", "S", "T", "F", "J", "P"];
 const PAGE_SIZE = 15;
 const DEFAULT_TEST_SEED_KEY = "default-mbti-personality-v1";
@@ -101,6 +101,28 @@ function setLoginError(message) {
     }
     loginErrorEl.hidden = false;
     loginErrorEl.textContent = message;
+}
+
+function messageFromAuthErrorCode(code) {
+    if (!code) {
+        return "로그인 실패: Firebase Auth 설정을 확인해 주세요.";
+    }
+    if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+        return "비밀번호가 올바르지 않습니다.";
+    }
+    if (code === "auth/invalid-email") {
+        return "관리자 이메일 형식이 올바르지 않습니다. admin.js 설정을 확인해 주세요.";
+    }
+    if (code === "auth/operation-not-allowed") {
+        return "Firebase 콘솔에서 Email/Password 로그인 방식을 활성화해 주세요.";
+    }
+    if (code === "auth/network-request-failed") {
+        return "네트워크 오류로 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+    }
+    if (code === "auth/too-many-requests") {
+        return "요청이 많아 잠시 차단되었습니다. 잠시 후 다시 시도해 주세요.";
+    }
+    return "로그인 실패: Firebase Auth 설정을 확인해 주세요.";
 }
 
 function formatDateTime(value) {
@@ -803,15 +825,16 @@ if (loginBtn) {
                     await auth.createUserWithEmailAndPassword(email, pw);
                     return;
                 } catch (createError) {
-                    setLoginError("초기 관리자 계정 생성에 실패했습니다. Firebase Auth 설정을 확인해 주세요.");
+                    const createCode = createError && createError.code ? createError.code : "";
+                    if (createCode === "auth/email-already-in-use") {
+                        setLoginError("이미 생성된 관리자 계정입니다. 비밀번호를 확인해 주세요.");
+                        return;
+                    }
+                    setLoginError(messageFromAuthErrorCode(createCode));
                     return;
                 }
             }
-            if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
-                setLoginError("비밀번호가 올바르지 않습니다.");
-                return;
-            }
-            setLoginError("로그인 실패: Firebase Auth 설정을 확인해 주세요.");
+            setLoginError(messageFromAuthErrorCode(code));
         }
     });
 }
