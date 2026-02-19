@@ -133,6 +133,9 @@ function messageFromAuthErrorCode(code) {
     if (!code) {
         return "로그인 실패: Firebase Auth 설정을 확인해 주세요.";
     }
+    if (code === "auth/user-not-found") {
+        return "등록되지 않은 관리자 계정입니다. Firebase Authentication > Users에서 계정을 확인해 주세요.";
+    }
     if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
         return "비밀번호가 올바르지 않습니다.";
     }
@@ -148,7 +151,7 @@ function messageFromAuthErrorCode(code) {
     if (code === "auth/too-many-requests") {
         return "요청이 많아 잠시 차단되었습니다. 잠시 후 다시 시도해 주세요.";
     }
-    return "로그인 실패: Firebase Auth 설정을 확인해 주세요.";
+    return `로그인 실패(${code}): Firebase Auth 설정을 확인해 주세요.`;
 }
 
 function formatDateTime(value) {
@@ -846,8 +849,23 @@ if (loginBtn) {
             await auth.signInWithEmailAndPassword(email, pw);
         } catch (error) {
             const code = error && error.code ? error.code : "";
+            console.error("Admin login failed:", code, error);
             const defaultAdminEmail = adminEmailFromId(ADMIN_ID).toLowerCase();
             if ((code === "auth/user-not-found" || code === "auth/invalid-credential") && email === defaultAdminEmail && pw === ADMIN_PW) {
+                try {
+                    await auth.createUserWithEmailAndPassword(email, pw);
+                    return;
+                } catch (createError) {
+                    const createCode = createError && createError.code ? createError.code : "";
+                    if (createCode === "auth/email-already-in-use") {
+                        setLoginError("이미 생성된 관리자 계정입니다. 비밀번호를 확인해 주세요.");
+                        return;
+                    }
+                    setLoginError(messageFromAuthErrorCode(createCode));
+                    return;
+                }
+            }
+            if (code === "auth/user-not-found" && isAllowedAdminEmail(email)) {
                 try {
                     await auth.createUserWithEmailAndPassword(email, pw);
                     return;
