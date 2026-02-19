@@ -853,7 +853,7 @@ function showResult() {
     resultContainer.hidden = false;
     setShareVisibility(false, true);
 
-    resultEl.textContent = `${langPack.resultPrefix || "Your MBTI type is:"} ${mbtiType}`;
+    resultEl.textContent = localizedResultTitle;
     resultDescriptionEl.textContent = localizedResultContent;
     saveRecentResult(currentTest, mbtiType, localizedResultContent || "");
     renderRecentResults();

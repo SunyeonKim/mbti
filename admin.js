@@ -230,11 +230,11 @@ function normalizeResultSettings(raw) {
     return base;
 }
 
-function commitCurrentResultEditor() {
+function commitCurrentResultEditor(mbtiKey = state.selectedResultMbti) {
     if (!resultMbtiSelectEl || !resultTitleInputEl || !resultContentInputEl) {
         return;
     }
-    const mbti = resultMbtiSelectEl.value;
+    const mbti = MBTI_RESULT_TYPES.includes(mbtiKey) ? mbtiKey : resultMbtiSelectEl.value;
     if (!mbti || !state.resultSettings[mbti]) {
         return;
     }
@@ -1340,7 +1340,7 @@ if (saveTestBtn) {
 
 if (resultMbtiSelectEl) {
     resultMbtiSelectEl.addEventListener("change", () => {
-        commitCurrentResultEditor();
+        commitCurrentResultEditor(state.selectedResultMbti);
         renderResultEditor(resultMbtiSelectEl.value);
     });
 }

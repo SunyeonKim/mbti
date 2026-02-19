@@ -591,6 +591,10 @@ button:hover,
     font-size: 1.2rem;
 }
 
+#result-description {
+    white-space: pre-line;
+}
+
 .result-guide-text {
     white-space: pre-wrap;
     margin-top: 0.75rem;
