@@ -38,6 +38,7 @@ const toastEl = document.getElementById("toast");
 
 const RECENT_RESULTS_STORAGE_KEY = "recentTestResultsV1";
 const MAX_RECENT_RESULTS = 5;
+const DRAG_SCROLL_THRESHOLD = 5;
 
 const isTestPage = Boolean(
     questionEl
@@ -63,6 +64,10 @@ let currentLanguage = localStorage.getItem("language") || "ko";
 let currentTheme = localStorage.getItem("theme")
     || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 let toastTimer = null;
+let isRecentDragging = false;
+let recentDragMoved = false;
+let recentDragStartX = 0;
+let recentDragStartLeft = 0;
 let activeTestFilter = "all";
 let popularSortOrder = "desc";
 let latestSortOrder = "desc";
@@ -933,6 +938,41 @@ if (recentResultsListEl && recentResultsIndicatorsEl) {
             dot.classList.toggle("active", index === activeIndex);
         });
     });
+
+    recentResultsListEl.addEventListener("mousedown", (event) => {
+        isRecentDragging = true;
+        recentDragMoved = false;
+        recentDragStartX = event.clientX;
+        recentDragStartLeft = recentResultsListEl.scrollLeft;
+        recentResultsListEl.classList.add("dragging");
+    });
+
+    window.addEventListener("mousemove", (event) => {
+        if (!isRecentDragging) {
+            return;
+        }
+        const deltaX = event.clientX - recentDragStartX;
+        if (Math.abs(deltaX) > DRAG_SCROLL_THRESHOLD) {
+            recentDragMoved = true;
+        }
+        recentResultsListEl.scrollLeft = recentDragStartLeft - deltaX;
+    });
+
+    window.addEventListener("mouseup", () => {
+        if (!isRecentDragging) {
+            return;
+        }
+        isRecentDragging = false;
+        recentResultsListEl.classList.remove("dragging");
+    });
+
+    recentResultsListEl.addEventListener("click", (event) => {
+        if (recentDragMoved) {
+            event.preventDefault();
+            event.stopPropagation();
+            recentDragMoved = false;
+        }
+    }, true);
 }
 
 testFilterButtons.forEach((button) => {

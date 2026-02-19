@@ -249,6 +249,10 @@ p {
     gap: 0.65rem;
 }
 
+.test-filter-controls + .test-card-grid {
+    margin-top: 0.9rem;
+}
+
 .filter-chip-row,
 .filter-toggle-row {
     display: flex;
@@ -390,14 +394,20 @@ a.test-card {
     scrollbar-width: none;
     -ms-overflow-style: none;
     padding: 0.1rem 0.3rem 0.4rem 0;
+    cursor: grab;
 }
 
 .recent-carousel-track::-webkit-scrollbar {
     display: none;
 }
 
+.recent-carousel-track.dragging {
+    cursor: grabbing;
+    user-select: none;
+}
+
 .carousel-card {
-    flex: 0 0 calc(100% - 2rem);
+    flex: 0 0 calc(90% - 0.5rem);
     scroll-snap-align: start;
 }
 
@@ -872,13 +882,13 @@ button:hover,
 
 @media (min-width: 640px) {
     .carousel-card {
-        flex-basis: calc(50% - 0.7rem);
+        flex-basis: calc(45% - 0.5rem);
     }
 }
 
 @media (min-width: 1024px) {
     .carousel-card {
-        flex-basis: calc(33.33% - 0.55rem);
+        flex-basis: calc(30% - 0.5rem);
     }
 }
 
