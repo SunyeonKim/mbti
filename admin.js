@@ -40,9 +40,12 @@ const questionListEl = document.getElementById("question-list");
 const saveTestBtn = document.getElementById("save-test-btn");
 const saveStatusEl = document.getElementById("admin-save-status");
 
-const db = window.firebaseServices && window.firebaseServices.db;
-const auth = window.firebaseServices && window.firebaseServices.auth;
-const isFirebaseConfigured = Boolean(window.firebaseServices && window.firebaseServices.isConfigured && db && auth);
+const firebaseServices = window.firebaseServices || {};
+const db = firebaseServices.db || null;
+const auth = firebaseServices.auth || null;
+const hasFirebaseCoreConfig = Boolean(firebaseServices && firebaseServices.isConfigured);
+const isAuthReady = Boolean(hasFirebaseCoreConfig && auth);
+const isDbReady = Boolean(hasFirebaseCoreConfig && db);
 
 const state = {
     currentPage: 1,
@@ -493,7 +496,7 @@ function getCurrentAdminId() {
 async function saveTest() {
     saveStatusEl.textContent = "";
 
-    if (!isFirebaseConfigured) {
+    if (!isDbReady) {
         saveStatusEl.textContent = "Firebase 설정이 없어 저장할 수 없습니다. firebase-config.js 값을 먼저 채워 주세요.";
         return;
     }
@@ -644,7 +647,7 @@ function renderListRows() {
 }
 
 async function loadTestList() {
-    if (!isFirebaseConfigured) {
+    if (!isDbReady) {
         listStatusEl.textContent = "Firebase 미설정 상태입니다.";
         listBodyEl.innerHTML = "";
         updatePaginationControls();
@@ -734,7 +737,7 @@ function getSeedQuestions() {
 }
 
 async function ensureDefaultMbtiTest() {
-    if (!isFirebaseConfigured) {
+    if (!isAuthReady) {
         return;
     }
 
@@ -778,7 +781,7 @@ if (loginBtn) {
         const id = String(adminIdEl.value || "").trim();
         const pw = String(adminPwEl.value || "");
 
-        if (!isFirebaseConfigured) {
+        if (!isAuthReady) {
             setLoginError("Firebase Auth 설정이 필요합니다. firebase-config.js 값을 확인해 주세요.");
             return;
         }
@@ -893,9 +896,9 @@ if (saveTestBtn) {
 (function init() {
     setQuestionCount(1);
 
-    if (!isFirebaseConfigured) {
+    if (!isAuthReady) {
         setAuthState(false);
-        setLoginError("Firebase 설정이 필요합니다. firebase-config.js를 먼저 채워 주세요.");
+        setLoginError("Firebase Auth 설정이 필요합니다. firebase-config.js 값을 확인해 주세요.");
         return;
     }
 
