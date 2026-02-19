@@ -378,6 +378,51 @@ a.test-card {
     min-height: 150px;
 }
 
+.recent-carousel-shell {
+    overflow: hidden;
+}
+
+.recent-carousel-track {
+    display: flex;
+    gap: 0.8rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0.1rem 0.3rem 0.4rem 0;
+}
+
+.recent-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+.carousel-card {
+    flex: 0 0 calc(100% - 2rem);
+    scroll-snap-align: start;
+}
+
+.carousel-indicators {
+    margin-top: 0.6rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--answer-bg);
+    padding: 0;
+}
+
+.carousel-dot.active {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
 .recent-result-body {
     padding: 0.85rem;
 }
@@ -822,6 +867,18 @@ button:hover,
 
     .content-section {
         margin-top: 1.6rem;
+    }
+}
+
+@media (min-width: 640px) {
+    .carousel-card {
+        flex-basis: calc(50% - 0.7rem);
+    }
+}
+
+@media (min-width: 1024px) {
+    .carousel-card {
+        flex-basis: calc(33.33% - 0.55rem);
     }
 }
 

@@ -33,6 +33,7 @@ const activeTestTitleEl = document.getElementById("active-test-title");
 const backToListBtn = document.getElementById("back-to-list-btn");
 const recentResultsSectionEl = document.getElementById("recent-results-section");
 const recentResultsListEl = document.getElementById("recent-results-list");
+const recentResultsIndicatorsEl = document.getElementById("recent-results-indicators");
 const toastEl = document.getElementById("toast");
 
 const RECENT_RESULTS_STORAGE_KEY = "recentTestResultsV1";
@@ -571,12 +572,15 @@ function saveRecentResult(test, mbtiType, description) {
 }
 
 function renderRecentResults() {
-    if (!recentResultsListEl || !recentResultsSectionEl) {
+    if (!recentResultsListEl || !recentResultsSectionEl || !recentResultsIndicatorsEl) {
         return;
     }
 
-    const recent = RecentResultsStore.getRecent(MAX_RECENT_RESULTS);
+    const recent = RecentResultsStore
+        .getRecent(MAX_RECENT_RESULTS)
+        .sort((a, b) => (Number(b.completedAt) || 0) - (Number(a.completedAt) || 0));
     recentResultsListEl.innerHTML = "";
+    recentResultsIndicatorsEl.innerHTML = "";
 
     if (!recent.length) {
         recentResultsSectionEl.hidden = true;
@@ -587,7 +591,7 @@ function renderRecentResults() {
 
     recent.forEach((item) => {
         const card = document.createElement("a");
-        card.className = "test-card recent-result-card";
+        card.className = "test-card recent-result-card carousel-card";
         card.href = `result.html?record=${encodeURIComponent(item.id)}`;
 
         const body = document.createElement("div");
@@ -609,6 +613,54 @@ function renderRecentResults() {
         card.appendChild(body);
         recentResultsListEl.appendChild(card);
     });
+
+    renderRecentResultIndicators(recent.length, 0);
+    requestAnimationFrame(() => {
+        if (recentResultsListEl) {
+            recentResultsListEl.scrollLeft = 0;
+        }
+    });
+}
+
+function getRecentCardSpan() {
+    if (!recentResultsListEl) {
+        return 1;
+    }
+    const cards = recentResultsListEl.querySelectorAll(".carousel-card");
+    if (!cards.length) {
+        return 1;
+    }
+    if (cards.length === 1) {
+        return cards[0].getBoundingClientRect().width;
+    }
+    const firstRect = cards[0].getBoundingClientRect();
+    const secondRect = cards[1].getBoundingClientRect();
+    return Math.max(1, secondRect.left - firstRect.left);
+}
+
+function renderRecentResultIndicators(total, activeIndex) {
+    if (!recentResultsIndicatorsEl) {
+        return;
+    }
+    recentResultsIndicatorsEl.innerHTML = "";
+
+    for (let i = 0; i < total; i += 1) {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = `carousel-dot${i === activeIndex ? " active" : ""}`;
+        dot.setAttribute("aria-label", `최근 결과 ${i + 1}번으로 이동`);
+        dot.addEventListener("click", () => {
+            if (!recentResultsListEl) {
+                return;
+            }
+            const span = getRecentCardSpan();
+            recentResultsListEl.scrollTo({
+                left: span * i,
+                behavior: "smooth"
+            });
+        });
+        recentResultsIndicatorsEl.appendChild(dot);
+    }
 }
 
 function setLanguage(lang) {
@@ -864,6 +916,23 @@ if (viewResultBtn) {
 
 if (backToListBtn) {
     backToListBtn.addEventListener("click", showListView);
+}
+
+if (recentResultsListEl && recentResultsIndicatorsEl) {
+    recentResultsListEl.addEventListener("scroll", () => {
+        const dots = recentResultsIndicatorsEl.querySelectorAll(".carousel-dot");
+        if (!dots.length) {
+            return;
+        }
+        const span = getRecentCardSpan();
+        const activeIndex = Math.max(0, Math.min(
+            dots.length - 1,
+            Math.round(recentResultsListEl.scrollLeft / span)
+        ));
+        dots.forEach((dot, index) => {
+            dot.classList.toggle("active", index === activeIndex);
+        });
+    });
 }
 
 testFilterButtons.forEach((button) => {
