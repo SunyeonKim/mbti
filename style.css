@@ -453,6 +453,7 @@ a.test-card {
     font-size: 0.93rem;
     line-height: 1.5;
     opacity: 0.9;
+    white-space: pre-line;
 }
 
 .text-link-list {

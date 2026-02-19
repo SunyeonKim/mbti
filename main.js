@@ -574,11 +574,11 @@ async function incrementTestViewCount(testId) {
 }
 
 function buildResultSummary(text) {
-    const normalized = String(text || "").replace(/\s+/g, " ").trim();
+    const normalized = String(text || "").trim();
     if (!normalized) {
         return "결과 요약이 준비되지 않았습니다.";
     }
-    return normalized.length > 72 ? `${normalized.slice(0, 72)}...` : normalized;
+    return normalized;
 }
 
 function saveRecentResult(test, mbtiType, description) {
