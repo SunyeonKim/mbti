@@ -687,7 +687,40 @@ function renderListRows() {
             }
         });
 
-        actionWrap.append(editBtn, removeBtn);
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.textContent = "복사";
+        copyBtn.addEventListener("click", async () => {
+            const ok = window.confirm("정말 복사하시겠습니까?");
+            if (!ok) {
+                return;
+            }
+
+            try {
+                const copiedTitle = `${String(item.title || item.cardTitle || "테스트")} (복사본)`;
+                const copiedCardTitle = `${String(item.cardTitle || item.title || "테스트")} (복사본)`;
+                const { id, ...sourceData } = item;
+
+                await db.collection("tests").add({
+                    ...sourceData,
+                    title: copiedTitle,
+                    cardTitle: copiedCardTitle,
+                    navTitle: item.navTitle ? `${String(item.navTitle)} (복사본)` : copiedCardTitle,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdById: getCurrentAdminId(),
+                    updatedById: getCurrentAdminId()
+                });
+
+                listStatusEl.textContent = "테스트를 복사 등록했습니다.";
+                await loadTestList();
+            } catch (error) {
+                console.error(error);
+                listStatusEl.textContent = "복사 실패: 콘솔 로그를 확인해 주세요.";
+            }
+        });
+
+        actionWrap.append(editBtn, removeBtn, copyBtn);
         actionsCell.appendChild(actionWrap);
 
         row.append(numberCell, titleCell, authorCell, createdCell, actionsCell);
