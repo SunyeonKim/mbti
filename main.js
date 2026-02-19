@@ -787,11 +787,11 @@ if (backToListBtn) {
 async function initPage() {
     applyTheme(currentTheme);
     setLanguage(currentLanguage);
+    renderDynamicNav();
     if (!isTestPage) {
         return;
     }
     await loadTests();
-    renderDynamicNav();
     renderTestCards();
     renderRecentResults();
 
