@@ -3,6 +3,7 @@ const ADMIN_PW = "namu!@#123";
 const ADMIN_EMAIL_DOMAIN = "namu-23d3b.firebaseapp.com";
 const EXTRA_ADMIN_EMAILS = ["ksn0525@gmail.com"];
 const MBTI_TYPES = ["", "E", "I", "N", "S", "T", "F", "J", "P"];
+const MBTI_RESULT_TYPES = ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP", "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"];
 const PAGE_SIZE = 15;
 const DEFAULT_TEST_SEED_KEY = "default-mbti-personality-v1";
 
@@ -21,19 +22,23 @@ const prevPageBtn = document.getElementById("list-prev-page");
 const nextPageBtn = document.getElementById("list-next-page");
 const pageInfoEl = document.getElementById("list-page-info");
 const goCreateBtn = document.getElementById("go-create-btn");
+const excelUploadBtn = document.getElementById("excel-upload-btn");
+const excelUploadInputEl = document.getElementById("excel-upload-input");
+const excelTemplateDownloadEl = document.getElementById("excel-template-download");
 const backToListBtn = document.getElementById("back-to-list-btn");
 const logoutBtn = document.getElementById("admin-logout-btn");
 
 const editorViewTitleEl = document.getElementById("editor-view-title");
 const testTitleEl = document.getElementById("test-title");
 const cardTitleEl = document.getElementById("card-title");
-const navTitleEl = document.getElementById("nav-title");
 const isRecommendedEl = document.getElementById("is-recommended");
-const targetQuestionCountEl = document.getElementById("question-count-target");
-const applyQuestionCountBtn = document.getElementById("apply-question-count");
+const publishVisibleEl = document.getElementById("publish-visible");
+const publishHiddenEl = document.getElementById("publish-hidden");
 const cardThumbnailInputEl = document.getElementById("card-thumbnail-input");
 const cardThumbnailPreviewEl = document.getElementById("card-thumbnail-preview");
-const resultGuideTextEl = document.getElementById("result-guide-text");
+const resultMbtiSelectEl = document.getElementById("result-mbti-select");
+const resultTitleInputEl = document.getElementById("result-title-input");
+const resultContentInputEl = document.getElementById("result-content-input");
 const resultImageInputEl = document.getElementById("result-image-input");
 const resultImagePreviewEl = document.getElementById("result-image-preview");
 const addQuestionBtn = document.getElementById("add-question-btn");
@@ -54,7 +59,8 @@ const state = {
     tests: [],
     editingTestId: "",
     cardThumbnailData: "",
-    resultImageData: ""
+    resultSettings: {},
+    selectedResultMbti: MBTI_RESULT_TYPES[0]
 };
 
 function setAuthState(isAuthenticated) {
@@ -193,6 +199,69 @@ function getSortableTimestamp(data) {
         return createdAt.toMillis();
     }
     return 0;
+}
+
+function createEmptyResultSettings() {
+    return MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+        acc[mbti] = {
+            title: "",
+            content: "",
+            image: "",
+            titleEn: "",
+            contentEn: ""
+        };
+        return acc;
+    }, {});
+}
+
+function normalizeResultSettings(raw) {
+    const base = createEmptyResultSettings();
+    const source = raw && typeof raw === "object" ? raw : {};
+    MBTI_RESULT_TYPES.forEach((mbti) => {
+        const item = source[mbti] && typeof source[mbti] === "object" ? source[mbti] : {};
+        base[mbti] = {
+            title: String(item.title || ""),
+            content: String(item.content || ""),
+            image: String(item.image || ""),
+            titleEn: String(item.titleEn || ""),
+            contentEn: String(item.contentEn || "")
+        };
+    });
+    return base;
+}
+
+function commitCurrentResultEditor() {
+    if (!resultMbtiSelectEl || !resultTitleInputEl || !resultContentInputEl) {
+        return;
+    }
+    const mbti = resultMbtiSelectEl.value;
+    if (!mbti || !state.resultSettings[mbti]) {
+        return;
+    }
+    state.resultSettings[mbti].title = String(resultTitleInputEl.value || "").trim();
+    state.resultSettings[mbti].content = String(resultContentInputEl.value || "").trim();
+}
+
+function renderResultEditor(mbti) {
+    if (!resultMbtiSelectEl || !resultTitleInputEl || !resultContentInputEl || !resultImagePreviewEl) {
+        return;
+    }
+    const key = MBTI_RESULT_TYPES.includes(mbti) ? mbti : MBTI_RESULT_TYPES[0];
+    state.selectedResultMbti = key;
+    resultMbtiSelectEl.value = key;
+    const current = state.resultSettings[key] || { title: "", content: "", image: "" };
+    resultTitleInputEl.value = current.title || "";
+    resultContentInputEl.value = current.content || "";
+    if (current.image) {
+        resultImagePreviewEl.src = current.image;
+        resultImagePreviewEl.hidden = false;
+    } else {
+        resultImagePreviewEl.hidden = true;
+        resultImagePreviewEl.removeAttribute("src");
+    }
+    if (resultImageInputEl) {
+        resultImageInputEl.value = "";
+    }
 }
 
 function createMbtiSelect(className) {
@@ -432,14 +501,19 @@ function resetEditor() {
 
     testTitleEl.value = "";
     cardTitleEl.value = "";
-    navTitleEl.value = "";
     if (isRecommendedEl) {
         isRecommendedEl.checked = false;
     }
-    resultGuideTextEl.value = "";
+    if (publishVisibleEl) {
+        publishVisibleEl.checked = true;
+    }
+    if (publishHiddenEl) {
+        publishHiddenEl.checked = false;
+    }
     questionListEl.innerHTML = "";
     state.cardThumbnailData = "";
-    state.resultImageData = "";
+    state.resultSettings = createEmptyResultSettings();
+    state.selectedResultMbti = MBTI_RESULT_TYPES[0];
 
     if (cardThumbnailInputEl) {
         cardThumbnailInputEl.value = "";
@@ -455,7 +529,7 @@ function resetEditor() {
 
     saveStatusEl.textContent = "";
     setQuestionCount(1);
-    targetQuestionCountEl.value = "1";
+    renderResultEditor(state.selectedResultMbti);
 }
 
 function setAnswerEditor(answerEditor, answerData) {
@@ -493,14 +567,18 @@ function setAnswerEditor(answerEditor, answerData) {
 function loadEditorFromData(data) {
     testTitleEl.value = String(data.title || "");
     cardTitleEl.value = String(data.cardTitle || "");
-    navTitleEl.value = String(data.navTitle || "");
     if (isRecommendedEl) {
         isRecommendedEl.checked = Boolean(data.isRecommended);
     }
-    resultGuideTextEl.value = String(data.resultGuideText || "");
+    if (publishVisibleEl) {
+        publishVisibleEl.checked = Boolean(data.isPublished !== false);
+    }
+    if (publishHiddenEl) {
+        publishHiddenEl.checked = !Boolean(data.isPublished !== false);
+    }
 
     state.cardThumbnailData = String(data.thumbnail || "");
-    state.resultImageData = String(data.resultImage || "");
+    state.resultSettings = normalizeResultSettings(data.resultSettings);
 
     if (state.cardThumbnailData) {
         cardThumbnailPreviewEl.src = state.cardThumbnailData;
@@ -510,18 +588,20 @@ function loadEditorFromData(data) {
         cardThumbnailPreviewEl.removeAttribute("src");
     }
 
-    if (state.resultImageData) {
-        resultImagePreviewEl.src = state.resultImageData;
-        resultImagePreviewEl.hidden = false;
-    } else {
-        resultImagePreviewEl.hidden = true;
-        resultImagePreviewEl.removeAttribute("src");
+    if (data.mbtiDescriptions && typeof data.mbtiDescriptions === "object") {
+        MBTI_RESULT_TYPES.forEach((mbti) => {
+            if (!state.resultSettings[mbti].content && data.mbtiDescriptions[mbti]) {
+                state.resultSettings[mbti].content = String(data.mbtiDescriptions[mbti]);
+            }
+            if (!state.resultSettings[mbti].title) {
+                state.resultSettings[mbti].title = `${mbti} 유형`;
+            }
+        });
     }
 
     const questions = Array.isArray(data.questions) ? data.questions : [];
     const targetCount = Math.max(1, questions.length);
     setQuestionCount(targetCount);
-    targetQuestionCountEl.value = String(targetCount);
 
     questions.forEach((questionData, questionIndex) => {
         const questionEl = questionListEl.querySelectorAll(".admin-question")[questionIndex];
@@ -542,6 +622,7 @@ function loadEditorFromData(data) {
     });
 
     updateQuestionCount();
+    renderResultEditor(state.selectedResultMbti);
 }
 
 function getCurrentAdminId() {
@@ -561,9 +642,9 @@ async function saveTest() {
 
     const title = String(testTitleEl.value || "").trim();
     const cardTitle = String(cardTitleEl.value || "").trim();
-    const navTitle = String(navTitleEl.value || "").trim();
     const isRecommended = Boolean(isRecommendedEl && isRecommendedEl.checked);
-    const resultGuideText = String(resultGuideTextEl.value || "").trim();
+    const isPublished = Boolean(publishVisibleEl && publishVisibleEl.checked);
+    commitCurrentResultEditor();
 
     if (!title) {
         saveStatusEl.textContent = "테스트 제목을 입력해 주세요.";
@@ -586,13 +667,19 @@ async function saveTest() {
     const payload = {
         title,
         cardTitle,
-        navTitle: navTitle || cardTitle,
+        navTitle: cardTitle,
         isRecommended,
+        isPublished,
         thumbnail: state.cardThumbnailData,
-        resultGuideText,
-        resultImage: state.resultImageData,
+        resultSettings: normalizeResultSettings(state.resultSettings),
+        mbtiDescriptions: MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+            const content = String(state.resultSettings[mbti] && state.resultSettings[mbti].content || "").trim();
+            if (content) {
+                acc[mbti] = content;
+            }
+            return acc;
+        }, {}),
         questions,
-        isPublished: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedById: getCurrentAdminId()
     };
@@ -765,6 +852,212 @@ async function loadTestList() {
     }
 }
 
+function parseBooleanCell(value, defaultValue = false) {
+    if (value === true || value === false) {
+        return value;
+    }
+    const normalized = String(value || "").trim().toLowerCase();
+    if (!normalized) {
+        return defaultValue;
+    }
+    return ["1", "true", "yes", "y", "노출", "추천"].includes(normalized);
+}
+
+function buildExcelTemplateWorkbook() {
+    if (!window.XLSX) {
+        return null;
+    }
+    const wb = XLSX.utils.book_new();
+
+    const basicRows = [{
+        title_ko: "직장인 공감 MBTI",
+        title_en: "Office Worker MBTI",
+        card_title_ko: "직장인 공감 MBTI",
+        card_title_en: "Office Worker MBTI",
+        thumbnail_url: "",
+        is_recommended: "false",
+        is_published: "true"
+    }];
+
+    const questionRows = [{
+        order: 1,
+        question_ko: "회의 전에 준비를 철저히 한다.",
+        question_en: "I prepare thoroughly before meetings.",
+        answer1_ko: "매우 그렇다",
+        answer1_en: "Strongly agree",
+        answer1_type1: "J",
+        answer1_score1: 2,
+        answer1_type2: "",
+        answer1_score2: 0,
+        answer2_ko: "대체로 그렇다",
+        answer2_en: "Agree",
+        answer2_type1: "J",
+        answer2_score1: 1,
+        answer2_type2: "",
+        answer2_score2: 0,
+        answer3_ko: "대체로 아니다",
+        answer3_en: "Disagree",
+        answer3_type1: "P",
+        answer3_score1: 1,
+        answer3_type2: "",
+        answer3_score2: 0,
+        answer4_ko: "전혀 아니다",
+        answer4_en: "Strongly disagree",
+        answer4_type1: "P",
+        answer4_score1: 2,
+        answer4_type2: "",
+        answer4_score2: 0
+    }];
+
+    const resultRows = MBTI_RESULT_TYPES.map((mbti) => ({
+        mbti,
+        title_ko: `${mbti} 유형`,
+        title_en: `${mbti} Type`,
+        content_ko: `${mbti} 결과 설명을 입력해 주세요.`,
+        content_en: `Describe ${mbti} result in English.`,
+        image_url: ""
+    }));
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(basicRows), "Basic");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(questionRows), "Questions");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resultRows), "Results");
+    return wb;
+}
+
+function parseExcelQuestions(rows) {
+    if (!Array.isArray(rows) || !rows.length) {
+        throw new Error("Questions 시트에 문항 데이터가 없습니다.");
+    }
+
+    return rows
+        .map((row) => {
+            const order = Number(row.order);
+            if (!Number.isFinite(order)) {
+                throw new Error("Questions 시트의 order 값이 올바르지 않습니다.");
+            }
+            const question = String(row.question_ko || "").trim();
+            if (!question) {
+                throw new Error(`Questions 시트 ${order}번 문항의 question_ko가 비어 있습니다.`);
+            }
+            const questionEn = String(row.question_en || "").trim();
+
+            const answers = [];
+            for (let i = 1; i <= 4; i += 1) {
+                const text = String(row[`answer${i}_ko`] || "").trim();
+                const textEn = String(row[`answer${i}_en`] || "").trim();
+                if (!text) {
+                    throw new Error(`Questions 시트 ${order}번 문항 answer${i}_ko가 비어 있습니다.`);
+                }
+                const scores = {};
+                [1, 2].forEach((index) => {
+                    const type = String(row[`answer${i}_type${index}`] || "").trim().toUpperCase();
+                    const score = Number(row[`answer${i}_score${index}`] || 0);
+                    if (type) {
+                        if (!MBTI_TYPES.includes(type)) {
+                            throw new Error(`Questions 시트 ${order}번 문항 answer${i}_type${index} 값이 잘못되었습니다.`);
+                        }
+                        if (!(score > 0)) {
+                            throw new Error(`Questions 시트 ${order}번 문항 answer${i}_score${index} 값이 0보다 커야 합니다.`);
+                        }
+                        scores[type] = (scores[type] || 0) + score;
+                    }
+                });
+                if (!Object.keys(scores).length) {
+                    throw new Error(`Questions 시트 ${order}번 문항 answer${i}에 MBTI 점수가 없습니다.`);
+                }
+                answers.push({ text, textEn, scores });
+            }
+            return { order, question, questionEn, answers };
+        })
+        .sort((a, b) => a.order - b.order)
+        .map((item) => ({
+            question: item.question,
+            questionEn: item.questionEn,
+            answers: item.answers
+        }));
+}
+
+function parseExcelResultSettings(rows) {
+    const settings = createEmptyResultSettings();
+    if (!Array.isArray(rows) || !rows.length) {
+        return settings;
+    }
+    rows.forEach((row) => {
+        const mbti = String(row.mbti || "").trim().toUpperCase();
+        if (!MBTI_RESULT_TYPES.includes(mbti)) {
+            return;
+        }
+        settings[mbti] = {
+            title: String(row.title_ko || "").trim(),
+            titleEn: String(row.title_en || "").trim(),
+            content: String(row.content_ko || "").trim(),
+            contentEn: String(row.content_en || "").trim(),
+            image: String(row.image_url || "").trim()
+        };
+    });
+    return settings;
+}
+
+async function importFromExcelFile(file) {
+    if (!window.XLSX) {
+        alert("엑셀 파서 로드에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+    }
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+    const basicSheet = workbook.Sheets.Basic || workbook.Sheets.basic;
+    const questionSheet = workbook.Sheets.Questions || workbook.Sheets.questions;
+    const resultSheet = workbook.Sheets.Results || workbook.Sheets.results;
+
+    if (!basicSheet || !questionSheet) {
+        throw new Error("엑셀 시트명이 올바르지 않습니다. Basic, Questions 시트를 확인해 주세요.");
+    }
+
+    const basicRows = XLSX.utils.sheet_to_json(basicSheet, { defval: "" });
+    const questionRows = XLSX.utils.sheet_to_json(questionSheet, { defval: "" });
+    const resultRows = resultSheet ? XLSX.utils.sheet_to_json(resultSheet, { defval: "" }) : [];
+
+    if (!basicRows.length) {
+        throw new Error("Basic 시트가 비어 있습니다.");
+    }
+
+    const basic = basicRows[0];
+    const title = String(basic.title_ko || "").trim();
+    const cardTitle = String(basic.card_title_ko || "").trim();
+    if (!title || !cardTitle) {
+        throw new Error("Basic 시트의 title_ko, card_title_ko는 필수입니다.");
+    }
+
+    const payload = {
+        title,
+        titleEn: String(basic.title_en || "").trim(),
+        cardTitle,
+        cardTitleEn: String(basic.card_title_en || "").trim(),
+        navTitle: cardTitle,
+        thumbnail: String(basic.thumbnail_url || "").trim(),
+        isRecommended: parseBooleanCell(basic.is_recommended, false),
+        isPublished: false,
+        viewCount: 0,
+        questions: parseExcelQuestions(questionRows),
+        resultSettings: parseExcelResultSettings(resultRows),
+        mbtiDescriptions: {},
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedById: getCurrentAdminId(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdById: getCurrentAdminId()
+    };
+
+    payload.mbtiDescriptions = MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+        const content = String(payload.resultSettings[mbti].content || "").trim();
+        if (content) {
+            acc[mbti] = content;
+        }
+        return acc;
+    }, {});
+
+    await db.collection("tests").add(payload);
+}
+
 async function openCreateView() {
     resetEditor();
     showEditorView();
@@ -850,6 +1143,11 @@ async function ensureDefaultMbtiTest() {
         const descriptions = (typeof translations !== "undefined" && translations.ko && translations.ko.mbtiDescriptions)
             ? translations.ko.mbtiDescriptions
             : {};
+        const seedResultSettings = createEmptyResultSettings();
+        MBTI_RESULT_TYPES.forEach((mbti) => {
+            seedResultSettings[mbti].title = `${mbti} 유형`;
+            seedResultSettings[mbti].content = String(descriptions[mbti] || "");
+        });
 
         await db.collection("tests").add({
             seedKey: DEFAULT_TEST_SEED_KEY,
@@ -859,8 +1157,7 @@ async function ensureDefaultMbtiTest() {
             isRecommended: false,
             viewCount: 0,
             thumbnail: "",
-            resultGuideText: "",
-            resultImage: "",
+            resultSettings: seedResultSettings,
             questions: seedQuestions,
             mbtiDescriptions: descriptions,
             isPublished: true,
@@ -944,6 +1241,42 @@ if (goCreateBtn) {
     goCreateBtn.addEventListener("click", openCreateView);
 }
 
+if (excelUploadBtn && excelUploadInputEl) {
+    excelUploadBtn.addEventListener("click", () => {
+        excelUploadInputEl.click();
+    });
+    excelUploadInputEl.addEventListener("change", async (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) {
+            return;
+        }
+        try {
+            listStatusEl.textContent = "엑셀 업로드 처리 중...";
+            await importFromExcelFile(file);
+            listStatusEl.textContent = "엑셀 등록 완료 (기본 숨김 상태)";
+            await loadTestList();
+        } catch (error) {
+            console.error(error);
+            alert(`엑셀 등록 실패: ${error.message || "형식을 확인해 주세요."}`);
+            listStatusEl.textContent = "엑셀 등록 실패";
+        } finally {
+            excelUploadInputEl.value = "";
+        }
+    });
+}
+
+if (excelTemplateDownloadEl) {
+    excelTemplateDownloadEl.addEventListener("click", (event) => {
+        event.preventDefault();
+        const workbook = buildExcelTemplateWorkbook();
+        if (!workbook || !window.XLSX) {
+            alert("엑셀 템플릿을 생성할 수 없습니다.");
+            return;
+        }
+        XLSX.writeFile(workbook, "mbti-test-template.xlsx");
+    });
+}
+
 if (backToListBtn) {
     backToListBtn.addEventListener("click", () => {
         showListView();
@@ -987,8 +1320,12 @@ if (resultImageInputEl) {
         if (!file) {
             return;
         }
-        state.resultImageData = await toDataUrl(file, 1024);
-        resultImagePreviewEl.src = state.resultImageData;
+        const selectedMbti = resultMbtiSelectEl ? resultMbtiSelectEl.value : state.selectedResultMbti;
+        if (!state.resultSettings[selectedMbti]) {
+            state.resultSettings[selectedMbti] = { title: "", content: "", image: "", titleEn: "", contentEn: "" };
+        }
+        state.resultSettings[selectedMbti].image = await toDataUrl(file, 1024);
+        resultImagePreviewEl.src = state.resultSettings[selectedMbti].image;
         resultImagePreviewEl.hidden = false;
     });
 }
@@ -997,17 +1334,32 @@ if (addQuestionBtn) {
     addQuestionBtn.addEventListener("click", addQuestion);
 }
 
-if (applyQuestionCountBtn) {
-    applyQuestionCountBtn.addEventListener("click", () => {
-        setQuestionCount(targetQuestionCountEl.value);
-    });
-}
-
 if (saveTestBtn) {
     saveTestBtn.addEventListener("click", saveTest);
 }
 
+if (resultMbtiSelectEl) {
+    resultMbtiSelectEl.addEventListener("change", () => {
+        commitCurrentResultEditor();
+        renderResultEditor(resultMbtiSelectEl.value);
+    });
+}
+
+if (resultTitleInputEl) {
+    resultTitleInputEl.addEventListener("input", () => {
+        commitCurrentResultEditor();
+    });
+}
+
+if (resultContentInputEl) {
+    resultContentInputEl.addEventListener("input", () => {
+        commitCurrentResultEditor();
+    });
+}
+
 (function init() {
+    state.resultSettings = createEmptyResultSettings();
+    renderResultEditor(state.selectedResultMbti);
     setQuestionCount(1);
 
     if (!isAuthReady) {

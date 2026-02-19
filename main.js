@@ -128,13 +128,14 @@ function buildFallbackTest() {
     return {
         id: "default-mbti",
         title: langPack.title || "MBTI 성격 검사",
+        titleEn: "MBTI Personality Test",
         cardTitle: langPack.title || "MBTI 성격 검사",
+        cardTitleEn: "MBTI Personality Test",
         navTitle: langPack.title || "MBTI 성격 검사",
         isRecommended: false,
         viewCount: 0,
         thumbnail: "",
-        resultGuideText: "",
-        resultImage: "",
+        resultSettings: {},
         mbtiDescriptions: langPack.mbtiDescriptions || {},
         questions,
         isFallback: true,
@@ -165,6 +166,7 @@ function sanitizeRemoteTest(doc) {
             const answers = Array.isArray(question.answers) ? question.answers : [];
             const normalizedAnswers = answers.slice(0, 4).map((answer) => ({
                 text: String(answer.text || "").trim(),
+                textEn: String(answer.textEn || "").trim(),
                 scores: sanitizeScores(answer.scores)
             }));
 
@@ -178,6 +180,7 @@ function sanitizeRemoteTest(doc) {
 
             return {
                 question: String(question.question).trim(),
+                questionEn: String(question.questionEn || "").trim(),
                 answers: normalizedAnswers
             };
         })
@@ -190,18 +193,36 @@ function sanitizeRemoteTest(doc) {
     return {
         id: doc.id,
         title: String(data.title || "테스트"),
+        titleEn: String(data.titleEn || ""),
         cardTitle: String(data.cardTitle || data.title || "테스트"),
+        cardTitleEn: String(data.cardTitleEn || ""),
         navTitle: String(data.navTitle || data.cardTitle || data.title || "테스트"),
         isRecommended: Boolean(data.isRecommended),
         viewCount: Math.max(0, Number(data.viewCount) || 0),
         thumbnail: String(data.thumbnail || ""),
         resultGuideText: String(data.resultGuideText || ""),
         resultImage: String(data.resultImage || ""),
+        resultSettings: (data.resultSettings && typeof data.resultSettings === "object") ? data.resultSettings : {},
         mbtiDescriptions: (data.mbtiDescriptions && typeof data.mbtiDescriptions === "object") ? data.mbtiDescriptions : {},
         questions: normalizedQuestions,
         isFallback: false,
         createdAtMs: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : 0
     };
+}
+
+function getLocalizedText(ko, en) {
+    if (currentLanguage === "en") {
+        return String(en || ko || "");
+    }
+    return String(ko || en || "");
+}
+
+function getLocalizedCardTitle(test) {
+    return getLocalizedText(test.cardTitle, test.cardTitleEn) || "테스트";
+}
+
+function getLocalizedTestTitle(test) {
+    return getLocalizedText(test.title, test.titleEn) || "테스트";
 }
 
 async function loadTests() {
@@ -242,9 +263,9 @@ function getSharePayload(scope) {
     const mbtiType = calculateResult();
     const isResult = scope === "result";
     const text = currentLanguage === "ko"
-        ? (isResult ? `내 MBTI 결과는 ${mbtiType}! ${currentTest ? currentTest.cardTitle : "테스트"} 해보기` : `${currentTest ? currentTest.cardTitle : "테스트"}를 공유해요`)
-        : (isResult ? `My MBTI result is ${mbtiType}. Try this test!` : `Try this test: ${currentTest ? currentTest.cardTitle : "MBTI test"}`);
-    const title = currentTest ? currentTest.cardTitle : "MBTI Test";
+        ? (isResult ? `내 MBTI 결과는 ${mbtiType}! ${currentTest ? getLocalizedCardTitle(currentTest) : "테스트"} 해보기` : `${currentTest ? getLocalizedCardTitle(currentTest) : "테스트"}를 공유해요`)
+        : (isResult ? `My MBTI result is ${mbtiType}. Try this test!` : `Try this test: ${currentTest ? getLocalizedCardTitle(currentTest) : "MBTI test"}`);
+    const title = currentTest ? getLocalizedCardTitle(currentTest) : "MBTI Test";
 
     return { shareUrl, text, title };
 }
@@ -430,7 +451,7 @@ function renderTestCards() {
         card.className = "test-card";
         card.tabIndex = 0;
         card.setAttribute("role", "button");
-        card.setAttribute("aria-label", `${test.cardTitle} 테스트 시작`);
+        card.setAttribute("aria-label", `${getLocalizedCardTitle(test)} 테스트 시작`);
 
         const thumb = document.createElement("div");
         thumb.className = "test-card-thumb";
@@ -438,7 +459,7 @@ function renderTestCards() {
         if (test.thumbnail) {
             const img = document.createElement("img");
             img.src = test.thumbnail;
-            img.alt = `${test.cardTitle} thumbnail`;
+            img.alt = `${getLocalizedCardTitle(test)} thumbnail`;
             thumb.appendChild(img);
         } else {
             thumb.textContent = "No Image";
@@ -467,7 +488,7 @@ function renderTestCards() {
 
         const title = document.createElement("p");
         title.className = "test-card-title";
-        title.textContent = test.cardTitle;
+        title.textContent = getLocalizedCardTitle(test);
 
         titleRow.append(copyBtn, title);
         card.appendChild(thumb);
@@ -722,7 +743,7 @@ function startTestById(testId) {
     userAnswers = new Array(currentTest.questions.length);
     selectedAnswerIndexes = new Array(currentTest.questions.length);
 
-    activeTestTitleEl.textContent = currentTest.title;
+    activeTestTitleEl.textContent = getLocalizedTestTitle(currentTest);
     testListViewEl.hidden = true;
     testViewEl.hidden = false;
 
@@ -744,13 +765,13 @@ function showQuestion() {
     }
 
     const currentQuestion = currentTest.questions[currentQuestionIndex];
-    questionEl.textContent = currentQuestion.question;
+    questionEl.textContent = getLocalizedText(currentQuestion.question, currentQuestion.questionEn);
     answersEl.innerHTML = "";
 
     currentQuestion.answers.forEach((answer, answerIndex) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.textContent = answer.text;
+        button.textContent = getLocalizedText(answer.text, answer.textEn);
 
         if (selectedAnswerIndexes[currentQuestionIndex] === answerIndex) {
             button.classList.add("selected");
@@ -818,6 +839,14 @@ function showResult() {
     const descriptionMap = currentTest.mbtiDescriptions && Object.keys(currentTest.mbtiDescriptions).length
         ? currentTest.mbtiDescriptions
         : (langPack.mbtiDescriptions || {});
+    const resultSettings = currentTest.resultSettings && typeof currentTest.resultSettings === "object"
+        ? currentTest.resultSettings
+        : {};
+    const resultConfig = resultSettings[mbtiType] && typeof resultSettings[mbtiType] === "object"
+        ? resultSettings[mbtiType]
+        : {};
+    const localizedResultTitle = getLocalizedText(resultConfig.title, resultConfig.titleEn) || currentTest.resultGuideText || `${mbtiType} 유형`;
+    const localizedResultContent = getLocalizedText(resultConfig.content, resultConfig.contentEn) || (descriptionMap[mbtiType] || "");
 
     testContainer.hidden = true;
     completionContainer.hidden = true;
@@ -825,17 +854,17 @@ function showResult() {
     setShareVisibility(false, true);
 
     resultEl.textContent = `${langPack.resultPrefix || "Your MBTI type is:"} ${mbtiType}`;
-    resultDescriptionEl.textContent = descriptionMap[mbtiType] || "";
-    saveRecentResult(currentTest, mbtiType, descriptionMap[mbtiType] || "");
+    resultDescriptionEl.textContent = localizedResultContent;
+    saveRecentResult(currentTest, mbtiType, localizedResultContent || "");
     renderRecentResults();
 
     if (resultGuideTextEl) {
-        resultGuideTextEl.textContent = currentTest.resultGuideText || "";
+        resultGuideTextEl.textContent = localizedResultTitle;
     }
 
     if (resultGuideImageEl) {
-        if (currentTest.resultImage) {
-            resultGuideImageEl.src = currentTest.resultImage;
+        if (resultConfig.image || currentTest.resultImage) {
+            resultGuideImageEl.src = resultConfig.image || currentTest.resultImage;
             resultGuideImageEl.hidden = false;
         } else {
             resultGuideImageEl.removeAttribute("src");

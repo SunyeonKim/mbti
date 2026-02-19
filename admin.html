@@ -40,6 +40,9 @@
                         <div class="admin-left-actions">
                             <h1>테스트 목록</h1>
                             <button id="go-create-btn" type="button">등록</button>
+                            <button id="excel-upload-btn" type="button">엑셀 등록</button>
+                            <a id="excel-template-download" class="admin-inline-link" href="#">엑셀 템플릿 다운로드</a>
+                            <input id="excel-upload-input" type="file" accept=".xlsx,.xls,.csv" hidden>
                         </div>
                         <button id="admin-logout-btn" type="button">로그아웃</button>
                     </div>
@@ -74,60 +77,100 @@
                         <button id="back-to-list-btn" type="button">목록으로</button>
                     </div>
 
-                    <div class="admin-grid two-col">
-                        <label>
-                            테스트 제목
-                            <input id="test-title" type="text" placeholder="예: 직장인 공감 MBTI">
-                        </label>
-                        <label>
-                            카드 제목
-                            <input id="card-title" type="text" placeholder="메인 카드에 표시될 제목">
-                        </label>
-                        <label>
-                            네비게이션 메뉴 제목
-                            <input id="nav-title" type="text" placeholder="비워두면 카드 제목 사용">
-                        </label>
-                        <label class="admin-checkbox-label">
-                            <input id="is-recommended" type="checkbox">
-                            홈 추천 테스트로 노출
-                        </label>
-                        <label>
-                            목표 문항 수
-                            <div class="inline-control">
-                                <input id="question-count-target" type="number" min="1" value="1">
-                                <button id="apply-question-count" type="button">문항 수 반영</button>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="admin-grid two-col image-upload-block">
-                        <label>
-                            카드 썸네일 이미지
-                            <input id="card-thumbnail-input" type="file" accept="image/*">
-                        </label>
-                        <div class="image-preview-wrap">
-                            <p>썸네일 미리보기</p>
-                            <img id="card-thumbnail-preview" alt="thumbnail preview" hidden>
+                    <section class="admin-section-block">
+                        <h2>기본 설정</h2>
+                        <div class="admin-grid two-col">
+                            <label>
+                                테스트 제목
+                                <input id="test-title" type="text" placeholder="예: 직장인 공감 MBTI">
+                            </label>
+                            <label>
+                                카드 제목
+                                <input id="card-title" type="text" placeholder="메인 카드에 표시될 제목">
+                            </label>
+                            <label class="admin-checkbox-label">
+                                <input id="is-recommended" type="checkbox">
+                                홈 추천
+                            </label>
+                            <fieldset class="admin-radio-group">
+                                <legend>노출 여부</legend>
+                                <label>
+                                    <input type="radio" name="publish-state" id="publish-visible" value="visible" checked>
+                                    노출
+                                </label>
+                                <label>
+                                    <input type="radio" name="publish-state" id="publish-hidden" value="hidden">
+                                    숨김
+                                </label>
+                            </fieldset>
                         </div>
 
-                        <label>
-                            결과 화면 안내 문구
-                            <textarea id="result-guide-text" rows="4" placeholder="결과 화면에서 보여줄 안내 문구"></textarea>
-                        </label>
-                        <label>
-                            결과 화면 이미지
-                            <input id="result-image-input" type="file" accept="image/*">
-                            <img id="result-image-preview" alt="result preview" hidden>
-                        </label>
-                    </div>
+                        <div class="admin-grid two-col image-upload-block">
+                            <label>
+                                카드 썸네일 이미지
+                                <input id="card-thumbnail-input" type="file" accept="image/*">
+                            </label>
+                            <div class="image-preview-wrap">
+                                <p>썸네일 미리보기</p>
+                                <img id="card-thumbnail-preview" alt="thumbnail preview" hidden>
+                            </div>
+                        </div>
+                    </section>
 
-                    <section>
+                    <hr class="admin-section-divider">
+
+                    <section class="admin-section-block">
                         <div class="admin-top-row">
                             <h2>문항 설정</h2>
                             <button id="add-question-btn" type="button">문항 추가</button>
                         </div>
                         <p id="question-count-label">현재 문항 수: 0</p>
                         <div id="question-list" class="question-list"></div>
+                    </section>
+
+                    <hr class="admin-section-divider">
+
+                    <section class="admin-section-block">
+                        <h2>결과 설정</h2>
+                        <div class="admin-grid two-col result-config-grid">
+                            <label>
+                                MBTI 유형 선택
+                                <select id="result-mbti-select">
+                                    <option value="INTJ">INTJ</option>
+                                    <option value="INTP">INTP</option>
+                                    <option value="ENTJ">ENTJ</option>
+                                    <option value="ENTP">ENTP</option>
+                                    <option value="INFJ">INFJ</option>
+                                    <option value="INFP">INFP</option>
+                                    <option value="ENFJ">ENFJ</option>
+                                    <option value="ENFP">ENFP</option>
+                                    <option value="ISTJ">ISTJ</option>
+                                    <option value="ISFJ">ISFJ</option>
+                                    <option value="ESTJ">ESTJ</option>
+                                    <option value="ESFJ">ESFJ</option>
+                                    <option value="ISTP">ISTP</option>
+                                    <option value="ISFP">ISFP</option>
+                                    <option value="ESTP">ESTP</option>
+                                    <option value="ESFP">ESFP</option>
+                                </select>
+                            </label>
+                            <label>
+                                결과 화면 제목
+                                <input id="result-title-input" type="text" placeholder="예: 전략가형 INTJ">
+                            </label>
+                            <label class="full-width">
+                                결과 화면 내용
+                                <textarea id="result-content-input" rows="5" placeholder="해당 유형의 결과 안내 내용을 입력해 주세요."></textarea>
+                            </label>
+                            <label>
+                                결과 화면 이미지
+                                <input id="result-image-input" type="file" accept="image/*">
+                            </label>
+                            <div class="image-preview-wrap">
+                                <p>결과 이미지 미리보기</p>
+                                <img id="result-image-preview" alt="result preview" hidden>
+                            </div>
+                        </div>
                     </section>
 
                     <div class="admin-actions">
@@ -166,6 +209,7 @@
     <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script defer src="translations.js"></script>
     <script defer src="firebase-config.js"></script>
     <script defer src="admin.js"></script>

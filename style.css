@@ -673,6 +673,28 @@ button:hover,
     margin: 0;
 }
 
+.admin-radio-group {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.admin-radio-group legend {
+    padding: 0 0.3rem;
+    font-weight: 700;
+}
+
+.admin-radio-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 600;
+}
+
 .admin-top-row {
     display: flex;
     align-items: center;
@@ -702,6 +724,22 @@ button:hover,
     border: 1px dashed var(--border);
     border-radius: 8px;
     padding: 0.7rem;
+}
+
+.admin-section-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.admin-section-divider {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 1rem 0;
+}
+
+.result-config-grid .full-width {
+    grid-column: 1 / -1;
 }
 
 .mbti-weight-guide table {
@@ -783,6 +821,14 @@ button:hover,
     display: flex;
     align-items: center;
     gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.admin-inline-link {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    opacity: 0.9;
 }
 
 .admin-list-status {
