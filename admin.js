@@ -1,6 +1,7 @@
 const ADMIN_ID = "namu";
 const ADMIN_PW = "namu!@#123";
 const ADMIN_EMAIL_DOMAIN = "namu-23d3b.firebaseapp.com";
+const EXTRA_ADMIN_EMAILS = ["ksn0525@gmail.com"];
 const MBTI_TYPES = ["", "E", "I", "N", "S", "T", "F", "J", "P"];
 const PAGE_SIZE = 15;
 const DEFAULT_TEST_SEED_KEY = "default-mbti-personality-v1";
@@ -80,6 +81,31 @@ function showEditorView() {
 
 function adminEmailFromId(id) {
     return `${id}@${ADMIN_EMAIL_DOMAIN}`;
+}
+
+function getAllowedAdminEmails() {
+    return [adminEmailFromId(ADMIN_ID), ...EXTRA_ADMIN_EMAILS]
+        .map((email) => String(email || "").trim().toLowerCase())
+        .filter(Boolean);
+}
+
+function isAllowedAdminEmail(email) {
+    const normalized = String(email || "").trim().toLowerCase();
+    if (!normalized) {
+        return false;
+    }
+    return getAllowedAdminEmails().includes(normalized);
+}
+
+function resolveAdminEmailFromLoginId(id) {
+    const normalized = String(id || "").trim();
+    if (!normalized) {
+        return "";
+    }
+    if (normalized.includes("@")) {
+        return normalized.toLowerCase();
+    }
+    return adminEmailFromId(normalized).toLowerCase();
 }
 
 function adminIdFromEmail(email) {
@@ -808,19 +834,20 @@ if (loginBtn) {
             return;
         }
 
-        if (id !== ADMIN_ID) {
-            setLoginError("허용되지 않은 관리자 ID입니다.");
+        const email = resolveAdminEmailFromLoginId(id);
+        if (!isAllowedAdminEmail(email)) {
+            setLoginError("허용되지 않은 관리자 계정입니다.");
             return;
         }
 
-        const email = adminEmailFromId(id);
         setLoginError("");
 
         try {
             await auth.signInWithEmailAndPassword(email, pw);
         } catch (error) {
             const code = error && error.code ? error.code : "";
-            if ((code === "auth/user-not-found" || code === "auth/invalid-credential") && id === ADMIN_ID && pw === ADMIN_PW) {
+            const defaultAdminEmail = adminEmailFromId(ADMIN_ID).toLowerCase();
+            if ((code === "auth/user-not-found" || code === "auth/invalid-credential") && email === defaultAdminEmail && pw === ADMIN_PW) {
                 try {
                     await auth.createUserWithEmailAndPassword(email, pw);
                     return;
@@ -926,8 +953,7 @@ if (saveTestBtn) {
     }
 
     auth.onAuthStateChanged(async (user) => {
-        const expectedEmail = adminEmailFromId(ADMIN_ID);
-        const authorized = Boolean(user && user.email === expectedEmail);
+        const authorized = Boolean(user && isAllowedAdminEmail(user.email));
         setAuthState(authorized);
 
         if (authorized) {
@@ -938,7 +964,7 @@ if (saveTestBtn) {
             return;
         }
 
-        if (user && user.email !== expectedEmail) {
+        if (user && !isAllowedAdminEmail(user.email)) {
             await auth.signOut();
             setLoginError("해당 계정은 관리자 접근 권한이 없습니다.");
         }
