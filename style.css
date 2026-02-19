@@ -11,6 +11,7 @@
     --shadow: rgba(0, 0, 0, 0.1);
     --bar-height: 64px;
     --bar-bg: #ffffff;
+    --danger: #b91c1c;
 }
 
 body[data-theme="dark"] {
@@ -25,6 +26,7 @@ body[data-theme="dark"] {
     --primary-hover: #d9d9d9;
     --shadow: rgba(0, 0, 0, 0.4);
     --bar-bg: #171717;
+    --danger: #ef4444;
 }
 
 * {
@@ -136,6 +138,12 @@ body.nav-open {
     gap: 0.5rem;
 }
 
+#dynamic-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
 .nav-link {
     display: block;
     text-decoration: none;
@@ -163,13 +171,15 @@ body.nav-open {
     font-size: 0.9rem;
 }
 
-#language-select {
+#language-select,
+input,
+select,
+textarea {
     border: 1px solid var(--border);
     background: var(--container-bg);
     color: var(--text);
     border-radius: 8px;
     padding: 0.55rem 0.7rem;
-    cursor: pointer;
 }
 
 .page-main {
@@ -191,8 +201,77 @@ body.nav-open {
     transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-h1 {
+.wide-container {
+    max-width: 980px;
+    text-align: left;
+}
+
+h1,
+h2,
+h3,
+p {
     color: var(--text);
+}
+
+.sub-copy {
+    margin-top: -0.35rem;
+    margin-bottom: 1.2rem;
+    opacity: 0.85;
+}
+
+.empty-message {
+    margin-top: 1rem;
+}
+
+.test-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 1rem;
+}
+
+.test-card {
+    border: 1px solid var(--border);
+    background: var(--answer-bg);
+    border-radius: 12px;
+    cursor: pointer;
+    overflow: hidden;
+    text-align: left;
+    padding: 0;
+}
+
+.test-card:hover {
+    background: var(--answer-hover);
+}
+
+.test-card-thumb {
+    width: 100%;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+    background: var(--container-bg);
+    color: var(--text);
+    opacity: 0.75;
+}
+
+.test-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.test-card-title {
+    margin: 0;
+    padding: 0.8rem;
+    font-weight: 700;
+}
+
+.test-view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
 }
 
 .progress-block {
@@ -241,6 +320,7 @@ h1 {
     color: var(--text);
     cursor: pointer;
     transition: background-color 0.3s;
+    text-align: left;
 }
 
 #answers button:hover {
@@ -254,11 +334,19 @@ h1 {
 #next-btn,
 #prev-btn,
 #view-result-btn,
-.primary-link {
+.primary-link,
+#back-to-list-btn,
+#admin-login-btn,
+#admin-logout-btn,
+#add-question-btn,
+#apply-question-count,
+#save-test-btn,
+.admin-question button,
+.existing-test-item button {
     display: inline-block;
     background-color: var(--primary);
     color: var(--container-bg);
-    padding: 1rem 2rem;
+    padding: 0.7rem 1.1rem;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -266,6 +354,7 @@ h1 {
     transition: background-color 0.3s;
 }
 
+button:hover,
 #next-btn:hover,
 #prev-btn:hover,
 #view-result-btn:hover,
@@ -291,6 +380,19 @@ h1 {
 
 #result {
     font-size: 1.2rem;
+}
+
+.result-guide-text {
+    white-space: pre-wrap;
+    margin-top: 0.75rem;
+}
+
+.result-guide-image {
+    display: block;
+    width: min(100%, 420px);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin: 0.75rem auto 0;
 }
 
 .share-section {
@@ -320,18 +422,169 @@ h1 {
     color: var(--text);
     cursor: pointer;
     font-weight: 700;
+    padding: 0;
 }
 
 .share-btn:hover {
     background: var(--answer-hover);
 }
 
-.coming-soon-container {
-    max-width: 520px;
+.admin-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
-.coming-soon-container p {
-    margin-bottom: 1.4rem;
+.admin-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.admin-grid.two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-weight: 600;
+}
+
+.admin-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+}
+
+.inline-control {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.inline-control input {
+    width: 110px;
+}
+
+.image-upload-block img,
+.image-preview-wrap img {
+    width: 100%;
+    max-width: 240px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+}
+
+.image-preview-wrap {
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 0.7rem;
+}
+
+.mbti-weight-guide table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+}
+
+.mbti-weight-guide th,
+.mbti-weight-guide td {
+    border: 1px solid var(--border);
+    padding: 0.55rem;
+    text-align: left;
+}
+
+.question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.admin-question {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem;
+    background: var(--answer-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.answers-editor {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.answer-editor {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.65rem;
+    background: var(--container-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.weight-row {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.weight-row input {
+    width: 92px;
+}
+
+.score-preview {
+    margin: 0;
+    font-size: 0.88rem;
+    opacity: 0.85;
+}
+
+.admin-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.admin-error {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.admin-security-note {
+    opacity: 0.85;
+}
+
+.existing-tests {
+    padding-left: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.existing-test-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .admin-grid.two-col,
+    .answers-editor {
+        grid-template-columns: 1fr;
+    }
+
+    .test-view-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
 @media (max-width: 480px) {
