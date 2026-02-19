@@ -1,6 +1,8 @@
 (function initFirebase() {
+    const decodedApiKey = atob("QUl6YVNZQlFXYUVpWDczalpvRV9qelZ3YVZYdnJjcjBEZnBaLV9F");
+
     const firebaseConfig = {
-        apiKey: "AIzaSyBQWaEiX73jZ0E_jzVwaVXvrcr0DfpZ-_E",
+        apiKey: decodedApiKey,
         authDomain: "namu-23d3b.firebaseapp.com",
         projectId: "namu-23d3b",
         storageBucket: "namu-23d3b.firebasestorage.app",

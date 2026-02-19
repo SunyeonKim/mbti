@@ -2,6 +2,8 @@ const ADMIN_ID = "namu";
 const ADMIN_PW = "namu!@#123";
 const ADMIN_EMAIL_DOMAIN = "mbti.local";
 const MBTI_TYPES = ["", "E", "I", "N", "S", "T", "F", "J", "P"];
+const PAGE_SIZE = 15;
+const DEFAULT_TEST_SEED_KEY = "default-mbti-personality-v1";
 
 const loginPanelEl = document.getElementById("admin-login-panel");
 const appEl = document.getElementById("admin-app");
@@ -9,7 +11,19 @@ const adminIdEl = document.getElementById("admin-id");
 const adminPwEl = document.getElementById("admin-password");
 const loginBtn = document.getElementById("admin-login-btn");
 const loginErrorEl = document.getElementById("admin-login-error");
+
+const listViewEl = document.getElementById("admin-list-view");
+const editorViewEl = document.getElementById("admin-editor-view");
+const listStatusEl = document.getElementById("admin-list-status");
+const listBodyEl = document.getElementById("admin-test-list-body");
+const prevPageBtn = document.getElementById("list-prev-page");
+const nextPageBtn = document.getElementById("list-next-page");
+const pageInfoEl = document.getElementById("list-page-info");
+const goCreateBtn = document.getElementById("go-create-btn");
+const backToListBtn = document.getElementById("back-to-list-btn");
 const logoutBtn = document.getElementById("admin-logout-btn");
+
+const editorViewTitleEl = document.getElementById("editor-view-title");
 const testTitleEl = document.getElementById("test-title");
 const cardTitleEl = document.getElementById("card-title");
 const navTitleEl = document.getElementById("nav-title");
@@ -25,27 +39,55 @@ const questionCountLabelEl = document.getElementById("question-count-label");
 const questionListEl = document.getElementById("question-list");
 const saveTestBtn = document.getElementById("save-test-btn");
 const saveStatusEl = document.getElementById("admin-save-status");
-const existingTestsEl = document.getElementById("existing-tests");
 
 const db = window.firebaseServices && window.firebaseServices.db;
 const auth = window.firebaseServices && window.firebaseServices.auth;
 const isFirebaseConfigured = Boolean(window.firebaseServices && window.firebaseServices.isConfigured && db && auth);
 
-let cardThumbnailData = "";
-let resultImageData = "";
+const state = {
+    currentPage: 1,
+    tests: [],
+    editingTestId: "",
+    cardThumbnailData: "",
+    resultImageData: ""
+};
 
 function setAuthState(isAuthenticated) {
     if (isAuthenticated) {
         loginPanelEl.hidden = true;
         appEl.hidden = false;
-    } else {
-        loginPanelEl.hidden = false;
-        appEl.hidden = true;
+        showListView();
+        return;
     }
+
+    loginPanelEl.hidden = false;
+    appEl.hidden = true;
+}
+
+function showListView() {
+    listViewEl.hidden = false;
+    editorViewEl.hidden = true;
+    saveStatusEl.textContent = "";
+}
+
+function showEditorView() {
+    listViewEl.hidden = true;
+    editorViewEl.hidden = false;
 }
 
 function adminEmailFromId(id) {
     return `${id}@${ADMIN_EMAIL_DOMAIN}`;
+}
+
+function adminIdFromEmail(email) {
+    if (!email || typeof email !== "string") {
+        return "-";
+    }
+    const atIndex = email.indexOf("@");
+    if (atIndex <= 0) {
+        return email;
+    }
+    return email.slice(0, atIndex);
 }
 
 function setLoginError(message) {
@@ -56,6 +98,46 @@ function setLoginError(message) {
     }
     loginErrorEl.hidden = false;
     loginErrorEl.textContent = message;
+}
+
+function formatDateTime(value) {
+    if (!value) {
+        return "-";
+    }
+
+    let dateValue = null;
+    if (value.toDate && typeof value.toDate === "function") {
+        dateValue = value.toDate();
+    } else if (value.toMillis && typeof value.toMillis === "function") {
+        dateValue = new Date(value.toMillis());
+    } else if (typeof value === "number") {
+        dateValue = new Date(value);
+    }
+
+    if (!dateValue || Number.isNaN(dateValue.getTime())) {
+        return "-";
+    }
+
+    return new Intl.DateTimeFormat("ko-KR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    }).format(dateValue);
+}
+
+function getSortableTimestamp(data) {
+    const updatedAt = data && data.updatedAt;
+    const createdAt = data && data.createdAt;
+
+    if (updatedAt && typeof updatedAt.toMillis === "function") {
+        return updatedAt.toMillis();
+    }
+    if (createdAt && typeof createdAt.toMillis === "function") {
+        return createdAt.toMillis();
+    }
+    return 0;
 }
 
 function createMbtiSelect(className) {
@@ -288,6 +370,126 @@ function collectQuestions() {
     return questions;
 }
 
+function resetEditor() {
+    state.editingTestId = "";
+    editorViewTitleEl.textContent = "테스트 등록";
+    saveTestBtn.textContent = "등록";
+
+    testTitleEl.value = "";
+    cardTitleEl.value = "";
+    navTitleEl.value = "";
+    resultGuideTextEl.value = "";
+    questionListEl.innerHTML = "";
+    state.cardThumbnailData = "";
+    state.resultImageData = "";
+
+    if (cardThumbnailInputEl) {
+        cardThumbnailInputEl.value = "";
+    }
+    if (resultImageInputEl) {
+        resultImageInputEl.value = "";
+    }
+
+    cardThumbnailPreviewEl.hidden = true;
+    cardThumbnailPreviewEl.removeAttribute("src");
+    resultImagePreviewEl.hidden = true;
+    resultImagePreviewEl.removeAttribute("src");
+
+    saveStatusEl.textContent = "";
+    setQuestionCount(1);
+    targetQuestionCountEl.value = "1";
+}
+
+function setAnswerEditor(answerEditor, answerData) {
+    const answerTextEl = answerEditor.querySelector(".answer-text");
+    const type1El = answerEditor.querySelector(".weight-type-1");
+    const score1El = answerEditor.querySelector(".weight-score-1");
+    const type2El = answerEditor.querySelector(".weight-type-2");
+    const score2El = answerEditor.querySelector(".weight-score-2");
+
+    answerTextEl.value = String(answerData.text || "");
+
+    const scoreEntries = Object.entries(answerData.scores || {})
+        .filter((entry) => Number(entry[1]) > 0)
+        .slice(0, 2);
+
+    if (scoreEntries[0]) {
+        type1El.value = scoreEntries[0][0];
+        score1El.value = String(Number(scoreEntries[0][1]));
+    } else {
+        type1El.value = "";
+        score1El.value = "0";
+    }
+
+    if (scoreEntries[1]) {
+        type2El.value = scoreEntries[1][0];
+        score2El.value = String(Number(scoreEntries[1][1]));
+    } else {
+        type2El.value = "";
+        score2El.value = "0";
+    }
+
+    refreshAnswerScorePreview(answerEditor);
+}
+
+function loadEditorFromData(data) {
+    testTitleEl.value = String(data.title || "");
+    cardTitleEl.value = String(data.cardTitle || "");
+    navTitleEl.value = String(data.navTitle || "");
+    resultGuideTextEl.value = String(data.resultGuideText || "");
+
+    state.cardThumbnailData = String(data.thumbnail || "");
+    state.resultImageData = String(data.resultImage || "");
+
+    if (state.cardThumbnailData) {
+        cardThumbnailPreviewEl.src = state.cardThumbnailData;
+        cardThumbnailPreviewEl.hidden = false;
+    } else {
+        cardThumbnailPreviewEl.hidden = true;
+        cardThumbnailPreviewEl.removeAttribute("src");
+    }
+
+    if (state.resultImageData) {
+        resultImagePreviewEl.src = state.resultImageData;
+        resultImagePreviewEl.hidden = false;
+    } else {
+        resultImagePreviewEl.hidden = true;
+        resultImagePreviewEl.removeAttribute("src");
+    }
+
+    const questions = Array.isArray(data.questions) ? data.questions : [];
+    const targetCount = Math.max(1, questions.length);
+    setQuestionCount(targetCount);
+    targetQuestionCountEl.value = String(targetCount);
+
+    questions.forEach((questionData, questionIndex) => {
+        const questionEl = questionListEl.querySelectorAll(".admin-question")[questionIndex];
+        if (!questionEl) {
+            return;
+        }
+
+        const questionInput = questionEl.querySelector(".question-title");
+        questionInput.value = String(questionData.question || "");
+
+        const answerEditors = questionEl.querySelectorAll(".answer-editor");
+        const answers = Array.isArray(questionData.answers) ? questionData.answers.slice(0, 4) : [];
+
+        answerEditors.forEach((answerEditor, answerIndex) => {
+            const answerData = answers[answerIndex] || { text: "", scores: {} };
+            setAnswerEditor(answerEditor, answerData);
+        });
+    });
+
+    updateQuestionCount();
+}
+
+function getCurrentAdminId() {
+    if (auth && auth.currentUser && auth.currentUser.email) {
+        return adminIdFromEmail(auth.currentUser.email);
+    }
+    return ADMIN_ID;
+}
+
 async function saveTest() {
     saveStatusEl.textContent = "";
 
@@ -319,94 +521,255 @@ async function saveTest() {
         return;
     }
 
-    saveStatusEl.textContent = "저장 중...";
+    const payload = {
+        title,
+        cardTitle,
+        navTitle: navTitle || cardTitle,
+        thumbnail: state.cardThumbnailData,
+        resultGuideText,
+        resultImage: state.resultImageData,
+        questions,
+        isPublished: true,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedById: getCurrentAdminId()
+    };
+
+    saveStatusEl.textContent = state.editingTestId ? "수정 저장 중..." : "등록 중...";
 
     try {
-        await db.collection("tests").add({
-            title,
-            cardTitle,
-            navTitle: navTitle || cardTitle,
-            thumbnail: cardThumbnailData,
-            resultGuideText,
-            resultImage: resultImageData,
-            questions,
-            isPublished: true,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        if (state.editingTestId) {
+            await db.collection("tests").doc(state.editingTestId).update(payload);
+            saveStatusEl.textContent = "수정 저장 완료";
+        } else {
+            await db.collection("tests").add({
+                ...payload,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdById: getCurrentAdminId()
+            });
+            saveStatusEl.textContent = "등록 완료";
+        }
 
-        saveStatusEl.textContent = "저장 완료";
-        resetEditor();
-        await loadExistingTests();
+        showListView();
+        await loadTestList();
     } catch (error) {
         console.error(error);
         saveStatusEl.textContent = "저장 실패: 콘솔 로그를 확인해 주세요.";
     }
 }
 
-function resetEditor() {
-    testTitleEl.value = "";
-    cardTitleEl.value = "";
-    navTitleEl.value = "";
-    resultGuideTextEl.value = "";
-    questionListEl.innerHTML = "";
-    cardThumbnailData = "";
-    resultImageData = "";
-    cardThumbnailPreviewEl.hidden = true;
-    cardThumbnailPreviewEl.removeAttribute("src");
-    resultImagePreviewEl.hidden = true;
-    resultImagePreviewEl.removeAttribute("src");
-    setQuestionCount(1);
-    targetQuestionCountEl.value = "1";
+function getTotalPages() {
+    return Math.max(1, Math.ceil(state.tests.length / PAGE_SIZE));
 }
 
-async function loadExistingTests() {
-    existingTestsEl.innerHTML = "";
+function updatePaginationControls() {
+    const totalPages = getTotalPages();
+    if (state.currentPage > totalPages) {
+        state.currentPage = totalPages;
+    }
 
+    pageInfoEl.textContent = `${state.currentPage} / ${totalPages}`;
+    prevPageBtn.disabled = state.currentPage <= 1;
+    nextPageBtn.disabled = state.currentPage >= totalPages;
+}
+
+function renderListRows() {
+    listBodyEl.innerHTML = "";
+
+    if (!state.tests.length) {
+        const emptyRow = document.createElement("tr");
+        const emptyCell = document.createElement("td");
+        emptyCell.colSpan = 5;
+        emptyCell.textContent = "등록된 테스트가 없습니다.";
+        emptyRow.appendChild(emptyCell);
+        listBodyEl.appendChild(emptyRow);
+        updatePaginationControls();
+        return;
+    }
+
+    const start = (state.currentPage - 1) * PAGE_SIZE;
+    const pageItems = state.tests.slice(start, start + PAGE_SIZE);
+
+    pageItems.forEach((item, idx) => {
+        const row = document.createElement("tr");
+
+        const numberCell = document.createElement("td");
+        numberCell.textContent = String(start + idx + 1);
+
+        const titleCell = document.createElement("td");
+        titleCell.textContent = String(item.title || item.cardTitle || "테스트");
+
+        const authorCell = document.createElement("td");
+        authorCell.textContent = String(item.createdById || adminIdFromEmail(item.createdByEmail) || "-");
+
+        const createdCell = document.createElement("td");
+        createdCell.textContent = formatDateTime(item.createdAt);
+
+        const actionsCell = document.createElement("td");
+        const actionWrap = document.createElement("div");
+        actionWrap.className = "table-action-wrap";
+
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.textContent = "수정";
+        editBtn.addEventListener("click", () => {
+            openEditView(item.id);
+        });
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.textContent = "삭제";
+        removeBtn.addEventListener("click", async () => {
+            const ok = window.confirm("해당 테스트를 삭제할까요?");
+            if (!ok) {
+                return;
+            }
+
+            try {
+                await db.collection("tests").doc(item.id).delete();
+                await loadTestList();
+            } catch (error) {
+                console.error(error);
+                listStatusEl.textContent = "삭제 실패: 콘솔 로그를 확인해 주세요.";
+            }
+        });
+
+        actionWrap.append(editBtn, removeBtn);
+        actionsCell.appendChild(actionWrap);
+
+        row.append(numberCell, titleCell, authorCell, createdCell, actionsCell);
+        listBodyEl.appendChild(row);
+    });
+
+    updatePaginationControls();
+}
+
+async function loadTestList() {
     if (!isFirebaseConfigured) {
-        const li = document.createElement("li");
-        li.textContent = "Firebase 미설정 상태입니다.";
-        existingTestsEl.appendChild(li);
+        listStatusEl.textContent = "Firebase 미설정 상태입니다.";
+        listBodyEl.innerHTML = "";
+        updatePaginationControls();
+        return;
+    }
+
+    listStatusEl.textContent = "목록을 불러오는 중...";
+
+    try {
+        const snapshot = await db.collection("tests").get();
+        state.tests = snapshot.docs
+            .map((doc) => ({ id: doc.id, ...doc.data() }))
+            .sort((a, b) => getSortableTimestamp(b) - getSortableTimestamp(a));
+
+        listStatusEl.textContent = "";
+        renderListRows();
+    } catch (error) {
+        console.error(error);
+        listStatusEl.textContent = "테스트 목록을 불러오지 못했습니다.";
+    }
+}
+
+async function openCreateView() {
+    resetEditor();
+    showEditorView();
+}
+
+async function openEditView(testId) {
+    if (!testId) {
         return;
     }
 
     try {
-        const snapshot = await db.collection("tests").orderBy("createdAt", "desc").limit(30).get();
-        if (snapshot.empty) {
-            const li = document.createElement("li");
-            li.textContent = "등록된 테스트가 없습니다.";
-            existingTestsEl.appendChild(li);
+        const doc = await db.collection("tests").doc(testId).get();
+        if (!doc.exists) {
+            listStatusEl.textContent = "대상 테스트를 찾을 수 없습니다.";
             return;
         }
 
-        snapshot.forEach((doc) => {
-            const data = doc.data() || {};
-            const li = document.createElement("li");
-            li.className = "existing-test-item";
-
-            const title = document.createElement("span");
-            title.textContent = `${data.cardTitle || data.title || "테스트"} (${doc.id})`;
-
-            const removeBtn = document.createElement("button");
-            removeBtn.type = "button";
-            removeBtn.textContent = "삭제";
-            removeBtn.addEventListener("click", async () => {
-                const ok = window.confirm("해당 테스트를 삭제할까요?");
-                if (!ok) {
-                    return;
-                }
-                await db.collection("tests").doc(doc.id).delete();
-                await loadExistingTests();
-            });
-
-            li.append(title, removeBtn);
-            existingTestsEl.appendChild(li);
-        });
+        state.editingTestId = testId;
+        editorViewTitleEl.textContent = "테스트 수정";
+        saveTestBtn.textContent = "수정 저장";
+        saveStatusEl.textContent = "";
+        loadEditorFromData(doc.data() || {});
+        showEditorView();
     } catch (error) {
         console.error(error);
-        const li = document.createElement("li");
-        li.textContent = "테스트 목록을 불러오지 못했습니다.";
-        existingTestsEl.appendChild(li);
+        listStatusEl.textContent = "테스트 데이터를 불러오지 못했습니다.";
+    }
+}
+
+function getSeedQuestions() {
+    if (typeof translations === "undefined" || !translations.ko || !Array.isArray(translations.ko.questions)) {
+        return [];
+    }
+
+    return translations.ko.questions
+        .map((question) => {
+            const answers = Array.isArray(question.answers) ? question.answers.slice(0, 4) : [];
+            if (!question.question || answers.length !== 4) {
+                return null;
+            }
+
+            const normalizedAnswers = answers
+                .map((answer) => ({
+                    text: String(answer.text || "").trim(),
+                    scores: Object.keys(answer.scores || {}).reduce((acc, key) => {
+                        const value = Number(answer.scores[key]);
+                        if (!Number.isNaN(value) && value > 0) {
+                            acc[key] = value;
+                        }
+                        return acc;
+                    }, {})
+                }))
+                .filter((answer) => answer.text && Object.keys(answer.scores).length > 0);
+
+            if (normalizedAnswers.length !== 4) {
+                return null;
+            }
+
+            return {
+                question: String(question.question).trim(),
+                answers: normalizedAnswers
+            };
+        })
+        .filter(Boolean);
+}
+
+async function ensureDefaultMbtiTest() {
+    if (!isFirebaseConfigured) {
+        return;
+    }
+
+    const seedQuestions = getSeedQuestions();
+    if (!seedQuestions.length) {
+        return;
+    }
+
+    try {
+        const existing = await db.collection("tests").where("seedKey", "==", DEFAULT_TEST_SEED_KEY).limit(1).get();
+        if (!existing.empty) {
+            return;
+        }
+
+        const descriptions = (typeof translations !== "undefined" && translations.ko && translations.ko.mbtiDescriptions)
+            ? translations.ko.mbtiDescriptions
+            : {};
+
+        await db.collection("tests").add({
+            seedKey: DEFAULT_TEST_SEED_KEY,
+            title: "MBTI 성격 검사",
+            cardTitle: "MBTI 성격 검사",
+            navTitle: "MBTI 성격 검사",
+            thumbnail: "",
+            resultGuideText: "",
+            resultImage: "",
+            questions: seedQuestions,
+            mbtiDescriptions: descriptions,
+            isPublished: true,
+            createdById: ADMIN_ID,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        console.error("기본 MBTI 테스트 자동 등록 실패:", error);
     }
 }
 
@@ -460,14 +823,43 @@ if (logoutBtn) {
     });
 }
 
+if (goCreateBtn) {
+    goCreateBtn.addEventListener("click", openCreateView);
+}
+
+if (backToListBtn) {
+    backToListBtn.addEventListener("click", () => {
+        showListView();
+    });
+}
+
+if (prevPageBtn) {
+    prevPageBtn.addEventListener("click", () => {
+        if (state.currentPage > 1) {
+            state.currentPage -= 1;
+            renderListRows();
+        }
+    });
+}
+
+if (nextPageBtn) {
+    nextPageBtn.addEventListener("click", () => {
+        const totalPages = getTotalPages();
+        if (state.currentPage < totalPages) {
+            state.currentPage += 1;
+            renderListRows();
+        }
+    });
+}
+
 if (cardThumbnailInputEl) {
     cardThumbnailInputEl.addEventListener("change", async (event) => {
         const file = event.target.files && event.target.files[0];
         if (!file) {
             return;
         }
-        cardThumbnailData = await toDataUrl(file, 800);
-        cardThumbnailPreviewEl.src = cardThumbnailData;
+        state.cardThumbnailData = await toDataUrl(file, 800);
+        cardThumbnailPreviewEl.src = state.cardThumbnailData;
         cardThumbnailPreviewEl.hidden = false;
     });
 }
@@ -478,8 +870,8 @@ if (resultImageInputEl) {
         if (!file) {
             return;
         }
-        resultImageData = await toDataUrl(file, 1024);
-        resultImagePreviewEl.src = resultImageData;
+        state.resultImageData = await toDataUrl(file, 1024);
+        resultImagePreviewEl.src = state.resultImageData;
         resultImagePreviewEl.hidden = false;
     });
 }
@@ -511,11 +903,15 @@ if (saveTestBtn) {
         const expectedEmail = adminEmailFromId(ADMIN_ID);
         const authorized = Boolean(user && user.email === expectedEmail);
         setAuthState(authorized);
+
         if (authorized) {
             setLoginError("");
-            await loadExistingTests();
+            await ensureDefaultMbtiTest();
+            state.currentPage = 1;
+            await loadTestList();
             return;
         }
+
         if (user && user.email !== expectedEmail) {
             await auth.signOut();
             setLoginError("해당 계정은 관리자 접근 권한이 없습니다.");
