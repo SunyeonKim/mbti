@@ -1,11 +1,12 @@
 (function initFirebase() {
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
+        apiKey: "AIzaSyBQWaEiX73jZ0E_jzVwaVXvrcr0DfpZ-_E",
+        authDomain: "namu-23d3b.firebaseapp.com",
+        projectId: "namu-23d3b",
+        storageBucket: "namu-23d3b.firebasestorage.app",
+        messagingSenderId: "1038810127268",
+        appId: "1:1038810127268:web:db9557db07fb123723bf31",
+        measurementId: "G-DEQLP1MTH9"
     };
 
     const isConfigured = Object.values(firebaseConfig).every((value) => (
