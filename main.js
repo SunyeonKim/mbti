@@ -31,6 +31,7 @@ const dynamicNavLinksEl = document.getElementById("dynamic-nav-links");
 const noTestsMessageEl = document.getElementById("no-tests-message");
 const activeTestTitleEl = document.getElementById("active-test-title");
 const backToListBtn = document.getElementById("back-to-list-btn");
+const surveyTopAnchorEl = document.getElementById("survey-top-anchor");
 const recentResultsSectionEl = document.getElementById("recent-results-section");
 const recentResultsListEl = document.getElementById("recent-results-list");
 const recentResultsIndicatorsEl = document.getElementById("recent-results-indicators");
@@ -890,6 +891,14 @@ function showListView() {
     window.history.replaceState({}, "", url);
 }
 
+function scrollToSurveyTop() {
+    if (surveyTopAnchorEl && typeof surveyTopAnchorEl.scrollIntoView === "function") {
+        surveyTopAnchorEl.scrollIntoView({ block: "start", behavior: "smooth" });
+        return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function startTestById(testId) {
     const found = tests.find((test) => test.id === testId);
     if (!found) {
@@ -921,6 +930,7 @@ function startTestById(testId) {
     window.history.replaceState({}, "", url);
 
     showQuestion();
+    scrollToSurveyTop();
 }
 
 function showQuestion() {
@@ -1085,6 +1095,7 @@ if (prevBtn) {
         if (currentQuestionIndex > 0) {
             currentQuestionIndex--;
             showQuestion();
+            scrollToSurveyTop();
         }
     });
 }
@@ -1098,6 +1109,7 @@ if (nextBtn) {
         if (currentQuestionIndex < currentTest.questions.length - 1) {
             currentQuestionIndex++;
             showQuestion();
+            scrollToSurveyTop();
             return;
         }
 

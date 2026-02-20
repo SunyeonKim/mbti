@@ -219,6 +219,10 @@ p {
     opacity: 0.85;
 }
 
+.page-back-link {
+    margin-bottom: 0.9rem;
+}
+
 .content-section {
     margin-top: 2rem;
 }
@@ -746,6 +750,12 @@ button:hover,
     border-radius: 10px;
     padding: 0.7rem;
     cursor: pointer;
+}
+
+a.result-recommended-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
 }
 
 .result-recommended-card img {
