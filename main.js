@@ -9,7 +9,6 @@ const viewResultBtn = document.getElementById("view-result-btn");
 const resultContainer = document.getElementById("result-container");
 const resultEl = document.getElementById("result");
 const resultDescriptionEl = document.getElementById("result-description");
-const resultGuideTextEl = document.getElementById("result-guide-text");
 const resultGuideImageEl = document.getElementById("result-guide-image");
 const languageSelectEl = document.getElementById("language-select");
 const themeToggleBtn = document.getElementById("theme-toggle");
@@ -917,10 +916,6 @@ function showResult() {
     resultDescriptionEl.innerHTML = renderResultContentHtml(localizedResultContent);
     saveRecentResult(currentTest, mbtiType, localizedResultContent || "");
     renderRecentResults();
-
-    if (resultGuideTextEl) {
-        resultGuideTextEl.textContent = localizedResultTitle;
-    }
 
     if (resultGuideImageEl) {
         if (resultConfig.image || currentTest.resultImage) {

@@ -590,23 +590,47 @@ button:hover,
 
 #result {
     font-size: 1.2rem;
+    margin: 0.35rem 0 0.75rem;
+    font-weight: 700;
 }
 
 #result-description {
-    white-space: pre-line;
+    white-space: normal;
+    line-height: 1.52;
+    font-size: 1rem;
 }
 
-.result-guide-text {
-    white-space: pre-wrap;
-    margin-top: 0.75rem;
+#result-description h2,
+#result-description h3,
+#result-description h4 {
+    margin: 0.6rem 0 0.35rem;
+    line-height: 1.35;
+}
+
+#result-description p {
+    margin: 0.2rem 0 0.55rem;
+    line-height: 1.52;
+}
+
+#result-description ul,
+#result-description ol {
+    margin: 0.3rem 0 0.65rem 1.1rem;
+    padding: 0;
+}
+
+#result-description li {
+    margin: 0.15rem 0;
+    line-height: 1.45;
 }
 
 .result-guide-image {
     display: block;
-    width: min(100%, 420px);
+    width: 100%;
+    max-width: 560px;
+    height: auto;
     border-radius: 10px;
     border: 1px solid var(--border);
-    margin: 0.75rem auto 0;
+    margin: 0.35rem auto 0.95rem;
 }
 
 .share-section {
