@@ -574,7 +574,7 @@ async function incrementTestViewCount(testId) {
 }
 
 function buildResultSummary(text) {
-    const normalized = String(text || "").trim();
+    const normalized = htmlToPlainText(text);
     if (!normalized) {
         return "결과 요약이 준비되지 않았습니다.";
     }
@@ -582,11 +582,63 @@ function buildResultSummary(text) {
 }
 
 function buildRecentCardSummary(text, maxLength = 75) {
-    const normalized = String(text || "").replace(/\s+/g, " ").trim();
+    const normalized = htmlToPlainText(text);
     if (!normalized) {
         return "결과 요약이 준비되지 않았습니다.";
     }
     return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized;
+}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function sanitizeAdminHtml(rawHtml) {
+    const template = document.createElement("template");
+    template.innerHTML = String(rawHtml || "");
+
+    template.content.querySelectorAll("script,style,iframe,object,embed,link,meta").forEach((node) => {
+        node.remove();
+    });
+
+    template.content.querySelectorAll("*").forEach((el) => {
+        Array.from(el.attributes).forEach((attr) => {
+            const name = String(attr.name || "").toLowerCase();
+            const value = String(attr.value || "").trim();
+            if (name.startsWith("on") || name === "srcdoc") {
+                el.removeAttribute(attr.name);
+                return;
+            }
+            if ((name === "href" || name === "src") && /^javascript:/i.test(value)) {
+                el.removeAttribute(attr.name);
+            }
+        });
+    });
+
+    return template.innerHTML;
+}
+
+function renderResultContentHtml(rawText) {
+    const source = String(rawText || "");
+    if (!source.trim()) {
+        return "";
+    }
+    if (/<[a-z][\s\S]*>/i.test(source)) {
+        return sanitizeAdminHtml(source);
+    }
+    return escapeHtml(source).replace(/\r?\n/g, "<br>");
+}
+
+function htmlToPlainText(rawText) {
+    const html = renderResultContentHtml(rawText);
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    return String(container.textContent || container.innerText || "").replace(/\s+/g, " ").trim();
 }
 
 function saveRecentResult(test, mbtiType, description) {
@@ -862,7 +914,7 @@ function showResult() {
     setShareVisibility(false, true);
 
     resultEl.textContent = localizedResultTitle;
-    resultDescriptionEl.textContent = localizedResultContent;
+    resultDescriptionEl.innerHTML = renderResultContentHtml(localizedResultContent);
     saveRecentResult(currentTest, mbtiType, localizedResultContent || "");
     renderRecentResults();
 

@@ -818,7 +818,20 @@ function renderListRows() {
             }
         });
 
-        actionWrap.append(editBtn, removeBtn, copyBtn);
+        const downloadBtn = document.createElement("button");
+        downloadBtn.type = "button";
+        downloadBtn.textContent = "다운로드";
+        downloadBtn.addEventListener("click", () => {
+            try {
+                downloadTestAsExcel(item);
+                listStatusEl.textContent = "엑셀 다운로드를 시작했습니다.";
+            } catch (error) {
+                console.error(error);
+                listStatusEl.textContent = "엑셀 다운로드 실패: 콘솔 로그를 확인해 주세요.";
+            }
+        });
+
+        actionWrap.append(editBtn, removeBtn, copyBtn, downloadBtn);
         actionsCell.appendChild(actionWrap);
 
         row.append(numberCell, titleCell, authorCell, createdCell, actionsCell);
@@ -861,6 +874,105 @@ function parseBooleanCell(value, defaultValue = false) {
         return defaultValue;
     }
     return ["1", "true", "yes", "y", "노출", "추천"].includes(normalized);
+}
+
+function safeFileName(name, fallback = "mbti-test") {
+    const cleaned = String(name || "")
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    if (!cleaned) {
+        return fallback;
+    }
+    return cleaned.slice(0, 120);
+}
+
+function normalizeExcelScoreEntries(scores) {
+    return Object.entries(scores || {})
+        .map(([type, score]) => [String(type || "").trim().toUpperCase(), Number(score) || 0])
+        .filter(([type, score]) => MBTI_TYPES.includes(type) && score > 0)
+        .slice(0, 2);
+}
+
+function buildExcelWorkbookFromTestItem(item) {
+    if (!window.XLSX) {
+        return null;
+    }
+    const wb = XLSX.utils.book_new();
+    const basicRows = [{
+        title_ko: String(item.title || "").trim(),
+        title_en: String(item.titleEn || "").trim(),
+        card_title_ko: String(item.cardTitle || item.title || "").trim(),
+        card_title_en: String(item.cardTitleEn || item.titleEn || "").trim(),
+        thumbnail_url: String(item.thumbnail || "").trim(),
+        is_recommended: Boolean(item.isRecommended) ? "true" : "false",
+        is_published: Boolean(item.isPublished) ? "true" : "false"
+    }];
+
+    const questions = Array.isArray(item.questions) ? item.questions : [];
+    const questionRows = questions.map((question, index) => {
+        const answers = Array.isArray(question.answers) ? question.answers.slice(0, 4) : [];
+        const row = {
+            order: index + 1,
+            question_ko: String(question.question || "").trim(),
+            question_en: String(question.questionEn || "").trim()
+        };
+
+        for (let i = 1; i <= 4; i += 1) {
+            const answer = answers[i - 1] || {};
+            const scoreEntries = normalizeExcelScoreEntries(answer.scores);
+            row[`answer${i}_ko`] = String(answer.text || "").trim();
+            row[`answer${i}_en`] = String(answer.textEn || "").trim();
+            row[`answer${i}_type1`] = scoreEntries[0] ? scoreEntries[0][0] : "";
+            row[`answer${i}_score1`] = scoreEntries[0] ? scoreEntries[0][1] : 0;
+            row[`answer${i}_type2`] = scoreEntries[1] ? scoreEntries[1][0] : "";
+            row[`answer${i}_score2`] = scoreEntries[1] ? scoreEntries[1][1] : 0;
+        }
+        return row;
+    });
+
+    const resultSettings = (item.resultSettings && typeof item.resultSettings === "object")
+        ? item.resultSettings
+        : {};
+    const mbtiDescriptions = (item.mbtiDescriptions && typeof item.mbtiDescriptions === "object")
+        ? item.mbtiDescriptions
+        : {};
+    const resultRows = MBTI_RESULT_TYPES.map((mbti) => {
+        const setting = (resultSettings[mbti] && typeof resultSettings[mbti] === "object")
+            ? resultSettings[mbti]
+            : {};
+        return {
+            mbti,
+            title_ko: String(setting.title || `${mbti} 유형`).trim(),
+            title_en: String(setting.titleEn || "").trim(),
+            content_ko: String(setting.content || mbtiDescriptions[mbti] || "").trim(),
+            content_en: String(setting.contentEn || "").trim(),
+            image_url: String(setting.image || "").trim()
+        };
+    });
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(basicRows), "Basic");
+    XLSX.utils.book_append_sheet(
+        wb,
+        XLSX.utils.json_to_sheet(questionRows.length ? questionRows : [{ order: 1, question_ko: "", question_en: "" }]),
+        "Questions"
+    );
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resultRows), "Results");
+
+    const title = String(item.title || item.cardTitle || "mbti-test").trim();
+    const fileName = `${safeFileName(title, "mbti-test")}.xlsx`;
+    return { wb, fileName };
+}
+
+function downloadTestAsExcel(item) {
+    if (!window.XLSX) {
+        throw new Error("엑셀 라이브러리를 불러오지 못했습니다.");
+    }
+    const result = buildExcelWorkbookFromTestItem(item);
+    if (!result) {
+        throw new Error("엑셀 파일을 생성할 수 없습니다.");
+    }
+    XLSX.writeFile(result.wb, result.fileName);
 }
 
 function buildExcelTemplateWorkbook() {
@@ -1005,9 +1117,17 @@ async function importFromExcelFile(file) {
     }
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: "array" });
-    const basicSheet = workbook.Sheets.Basic || workbook.Sheets.basic;
-    const questionSheet = workbook.Sheets.Questions || workbook.Sheets.questions;
-    const resultSheet = workbook.Sheets.Results || workbook.Sheets.results;
+
+    const normalizeSheetName = (name) => String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const findSheet = (aliases) => {
+        const normalizedAliases = aliases.map((alias) => normalizeSheetName(alias)).filter(Boolean);
+        const sheetName = (workbook.SheetNames || []).find((name) => normalizedAliases.includes(normalizeSheetName(name)));
+        return sheetName ? workbook.Sheets[sheetName] : null;
+    };
+
+    const basicSheet = findSheet(["Basic"]);
+    const questionSheet = findSheet(["Questions", "Question"]);
+    const resultSheet = findSheet(["Results", "<Results>", "Result"]);
 
     if (!basicSheet || !questionSheet) {
         throw new Error("엑셀 시트명이 올바르지 않습니다. Basic, Questions 시트를 확인해 주세요.");
