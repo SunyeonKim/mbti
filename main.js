@@ -25,6 +25,7 @@ const resultShareSection = document.getElementById("result-share-section");
 const testListViewEl = document.getElementById("test-list-view");
 const testViewEl = document.getElementById("test-view");
 const testCardGridEl = document.getElementById("test-card-grid");
+const progressBlockEl = document.querySelector(".progress-block");
 const testFilterButtons = document.querySelectorAll("[data-test-filter]");
 const dynamicNavLinksEl = document.getElementById("dynamic-nav-links");
 const noTestsMessageEl = document.getElementById("no-tests-message");
@@ -33,6 +34,8 @@ const backToListBtn = document.getElementById("back-to-list-btn");
 const recentResultsSectionEl = document.getElementById("recent-results-section");
 const recentResultsListEl = document.getElementById("recent-results-list");
 const recentResultsIndicatorsEl = document.getElementById("recent-results-indicators");
+const resultRecommendedSectionEl = document.getElementById("result-recommended-section");
+const resultRecommendedListEl = document.getElementById("result-recommended-list");
 const toastEl = document.getElementById("toast");
 
 const RECENT_RESULTS_STORAGE_KEY = "recentTestResultsV1";
@@ -70,6 +73,12 @@ let recentDragStartLeft = 0;
 let activeTestFilter = "all";
 let popularSortOrder = "desc";
 let latestSortOrder = "desc";
+
+const COPY_ICON_SVG = `
+<svg class="doc-copy-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <rect x="9" y="7" width="10" height="12" rx="2" ry="2"></rect>
+    <path d="M15 7V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"></path>
+</svg>`;
 
 const RecentResultsStore = {
     load() {
@@ -273,8 +282,12 @@ async function copyShareLink(scope) {
     const { shareUrl } = getSharePayload(scope);
     try {
         await copyTextToClipboard(shareUrl);
+        showToast("링크 복사가 완료되었습니다.");
+        return true;
     } catch (error) {
         console.warn("Failed to copy share link:", error);
+        showToast("링크 복사에 실패했습니다.");
+        return false;
     }
 }
 
@@ -311,18 +324,43 @@ function openShareWindow(url) {
     window.open(url, "_blank", "noopener,noreferrer,width=640,height=720");
 }
 
-function shareToChannel(type, scope) {
+function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+}
+
+async function shareToChannel(type, scope) {
     const { shareUrl, text, title } = getSharePayload(scope);
     const encodedUrl = encodeURIComponent(shareUrl);
     const encodedText = encodeURIComponent(text);
     const encodedTitle = encodeURIComponent(title);
 
     if (type === "copy") {
-        copyShareLink(scope);
+        await copyShareLink(scope);
         return;
     }
 
     if (type === "kakao") {
+        if (isMobileDevice() && navigator.share && typeof navigator.share === "function") {
+            try {
+                await navigator.share({ title, text, url: shareUrl });
+                return;
+            } catch (error) {
+                // User cancel is expected; continue to fallbacks for real failures.
+                if (error && error.name === "AbortError") {
+                    return;
+                }
+            }
+        }
+        if (isMobileDevice()) {
+            const fallbackUrl = `https://sharer.kakao.com/talk/friends/picker/link?url=${encodedUrl}&text=${encodedText}`;
+            const deepLink = `kakaotalk://web/openExternal?url=${encodeURIComponent(fallbackUrl)}`;
+            const fallbackTimer = window.setTimeout(() => {
+                window.location.href = fallbackUrl;
+            }, 700);
+            window.location.href = deepLink;
+            window.setTimeout(() => window.clearTimeout(fallbackTimer), 1200);
+            return;
+        }
         openShareWindow(`https://sharer.kakao.com/talk/friends/picker/link?url=${encodedUrl}&text=${encodedText}`);
         return;
     }
@@ -471,7 +509,7 @@ function renderTestCards() {
         copyBtn.type = "button";
         copyBtn.className = "copy-link-btn";
         copyBtn.setAttribute("aria-label", `${test.cardTitle} 링크 복사`);
-        copyBtn.textContent = "📎";
+        copyBtn.innerHTML = COPY_ICON_SVG;
         copyBtn.addEventListener("click", async (event) => {
             event.stopPropagation();
             const params = new URLSearchParams(window.location.search);
@@ -501,6 +539,70 @@ function renderTestCards() {
             }
         });
         testCardGridEl.appendChild(card);
+    });
+}
+
+function renderResultRecommendations() {
+    if (!resultRecommendedSectionEl || !resultRecommendedListEl || !currentTest) {
+        return;
+    }
+
+    resultRecommendedListEl.innerHTML = "";
+    const recommended = [...tests]
+        .filter((test) => test.id !== currentTest.id)
+        .sort((a, b) => {
+            const viewDiff = (Number(b.viewCount) || 0) - (Number(a.viewCount) || 0);
+            if (viewDiff !== 0) {
+                return viewDiff;
+            }
+            return (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0);
+        })
+        .slice(0, 3);
+
+    if (!recommended.length) {
+        resultRecommendedSectionEl.hidden = true;
+        return;
+    }
+
+    recommended.forEach((test) => {
+        const item = document.createElement("article");
+        item.className = "result-recommended-card";
+        item.tabIndex = 0;
+        item.setAttribute("role", "button");
+        item.setAttribute("aria-label", `${getLocalizedCardTitle(test)} 테스트 시작`);
+
+        if (test.thumbnail) {
+            const img = document.createElement("img");
+            img.src = test.thumbnail;
+            img.alt = `${getLocalizedCardTitle(test)} thumbnail`;
+            item.appendChild(img);
+        }
+
+        const title = document.createElement("p");
+        title.className = "result-recommended-title";
+        title.textContent = getLocalizedCardTitle(test);
+
+        const meta = document.createElement("p");
+        meta.className = "result-recommended-meta";
+        meta.textContent = `조회수 ${Math.max(0, Number(test.viewCount) || 0).toLocaleString()}`;
+
+        item.append(title, meta);
+        item.addEventListener("click", () => startTestById(test.id));
+        item.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                startTestById(test.id);
+            }
+        });
+        resultRecommendedListEl.appendChild(item);
+    });
+
+    resultRecommendedSectionEl.hidden = false;
+}
+
+function decorateShareButtons() {
+    document.querySelectorAll('.share-btn[data-share-type="copy"]').forEach((button) => {
+        button.innerHTML = COPY_ICON_SVG;
     });
 }
 
@@ -809,6 +911,9 @@ function startTestById(testId) {
     testContainer.hidden = false;
     completionContainer.hidden = true;
     resultContainer.hidden = true;
+    if (progressBlockEl) {
+        progressBlockEl.hidden = false;
+    }
     setShareVisibility(true, false);
 
     const url = new URL(window.location.href);
@@ -884,6 +989,9 @@ function showCompletion() {
     testContainer.hidden = true;
     completionContainer.hidden = false;
     resultContainer.hidden = true;
+    if (progressBlockEl) {
+        progressBlockEl.hidden = false;
+    }
     setShareVisibility(false, false);
     updateProgress(currentTest ? currentTest.questions.length : 0);
 }
@@ -910,10 +1018,14 @@ function showResult() {
     testContainer.hidden = true;
     completionContainer.hidden = true;
     resultContainer.hidden = false;
+    if (progressBlockEl) {
+        progressBlockEl.hidden = true;
+    }
     setShareVisibility(false, true);
 
-    resultEl.textContent = localizedResultTitle;
+    resultEl.innerHTML = renderResultContentHtml(localizedResultTitle);
     resultDescriptionEl.innerHTML = renderResultContentHtml(localizedResultContent);
+    renderResultRecommendations();
     saveRecentResult(currentTest, mbtiType, localizedResultContent || "");
     renderRecentResults();
 
@@ -1087,6 +1199,7 @@ testFilterButtons.forEach((button) => {
 async function initPage() {
     applyTheme(currentTheme);
     setLanguage(currentLanguage);
+    decorateShareButtons();
     renderDynamicNav();
     updateFilterControls();
     if (!isTestPage) {

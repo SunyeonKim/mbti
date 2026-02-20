@@ -117,23 +117,27 @@
                 <div id="result-container" hidden>
                     <h2 data-i18n="resultTitle">Your Result</h2>
                     <img id="result-guide-image" class="result-guide-image" alt="result guide" hidden>
-                    <p id="result"></p>
+                    <div id="result"></div>
                     <p id="result-description"></p>
                     <div id="result-share-section" class="share-section" hidden>
                         <p class="share-title" data-i18n="resultShareTitle">결과 공유하기</p>
                         <div class="share-icons">
-                            <button class="share-btn" type="button" data-share-type="copy" data-share-scope="result" aria-label="Copy link">🔗</button>
+                            <button class="share-btn" type="button" data-share-type="copy" data-share-scope="result" aria-label="Copy link"></button>
                             <button class="share-btn" type="button" data-share-type="kakao" data-share-scope="result" aria-label="Share to KakaoTalk">K</button>
                             <button class="share-btn" type="button" data-share-type="x" data-share-scope="result" aria-label="Share to X">X</button>
                             <button class="share-btn" type="button" data-share-type="naver" data-share-scope="result" aria-label="Share to Naver Blog">N</button>
                         </div>
+                        <section id="result-recommended-section" class="result-recommended-section" hidden>
+                            <h3 class="result-recommended-heading">추천 테스트</h3>
+                            <div id="result-recommended-list" class="result-recommended-grid"></div>
+                        </section>
                     </div>
                 </div>
 
                 <div id="default-share-section" class="share-section">
                     <p class="share-title" data-i18n="shareTitle">테스트 공유하기</p>
                     <div class="share-icons">
-                        <button class="share-btn" type="button" data-share-type="copy" data-share-scope="default" aria-label="Copy link">🔗</button>
+                        <button class="share-btn" type="button" data-share-type="copy" data-share-scope="default" aria-label="Copy link"></button>
                         <button class="share-btn" type="button" data-share-type="kakao" data-share-scope="default" aria-label="Share to KakaoTalk">K</button>
                         <button class="share-btn" type="button" data-share-type="x" data-share-scope="default" aria-label="Share to X">X</button>
                         <button class="share-btn" type="button" data-share-type="naver" data-share-scope="default" aria-label="Share to Naver Blog">N</button>

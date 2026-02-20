@@ -349,6 +349,9 @@ a.test-card {
     flex: 0 0 auto;
     padding: 0;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .copy-link-btn:hover {
@@ -643,6 +646,7 @@ button:hover,
     margin: 0 0 0.65rem;
     font-size: 0.95rem;
     font-weight: 600;
+    text-align: center;
 }
 
 .share-icons {
@@ -661,10 +665,112 @@ button:hover,
     cursor: pointer;
     font-weight: 700;
     padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .share-btn:hover {
     background: var(--answer-hover);
+}
+
+.doc-copy-icon {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.share-btn[data-share-type="copy"] {
+    background: var(--container-bg);
+    color: var(--text);
+}
+
+.share-btn[data-share-type="kakao"] {
+    background: #fee500;
+    border-color: #fee500;
+    color: #fff;
+}
+
+.share-btn[data-share-type="kakao"]:hover {
+    background: #f5db00;
+    border-color: #f5db00;
+    color: #fff;
+}
+
+.share-btn[data-share-type="x"] {
+    background: #000;
+    border-color: #000;
+    color: #fff;
+}
+
+.share-btn[data-share-type="x"]:hover {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+}
+
+.share-btn[data-share-type="naver"] {
+    background: #03c75a;
+    border-color: #03c75a;
+    color: #fff;
+}
+
+.share-btn[data-share-type="naver"]:hover {
+    background: #02b14f;
+    border-color: #02b14f;
+    color: #fff;
+}
+
+.result-recommended-section {
+    margin-top: 1rem;
+}
+
+.result-recommended-heading {
+    margin: 0 0 0.65rem;
+    font-size: 1rem;
+}
+
+.result-recommended-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+}
+
+.result-recommended-card {
+    border: 1px solid var(--border);
+    background: var(--answer-bg);
+    border-radius: 10px;
+    padding: 0.7rem;
+    cursor: pointer;
+}
+
+.result-recommended-card img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 0.55rem;
+}
+
+.result-recommended-card:hover {
+    background: var(--answer-hover);
+}
+
+.result-recommended-title {
+    margin: 0;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.result-recommended-meta {
+    margin: 0.3rem 0 0;
+    font-size: 0.88rem;
+    opacity: 0.85;
 }
 
 .admin-container {
@@ -965,11 +1071,19 @@ button:hover,
     .carousel-card {
         flex-basis: calc(45% - 0.5rem);
     }
+
+    .result-recommended-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (min-width: 1024px) {
     .carousel-card {
         flex-basis: calc(30% - 0.5rem);
+    }
+
+    .result-recommended-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 
