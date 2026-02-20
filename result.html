@@ -19,6 +19,7 @@
         <div class="container wide-container">
             <a href="index.html" class="primary-link page-back-link">← 메인으로</a>
             <h1>최근 테스트 결과</h1>
+            <img id="recent-result-guide-image" class="result-guide-image recent-result-guide-image" alt="result guide" hidden>
             <section id="result-detail" class="content-section" hidden>
                 <h2 id="result-test-title"></h2>
                 <div id="result-type" class="recent-result-type"></div>
@@ -70,6 +71,7 @@
             const titleEl = document.getElementById("result-test-title");
             const typeEl = document.getElementById("result-type");
             const descriptionEl = document.getElementById("result-description");
+            const recentGuideImageEl = document.getElementById("recent-result-guide-image");
             const shareSectionEl = document.getElementById("result-share-section");
             const recommendedSectionEl = document.getElementById("recent-result-recommended-section");
             const recommendedListEl = document.getElementById("recent-result-recommended-list");
@@ -225,7 +227,8 @@
                 if (!services.isConfigured || !services.db || !found.testId) {
                     return {
                         title: found.resultType || "-",
-                        description: found.summary || "결과 요약이 없습니다."
+                        description: found.summary || "결과 요약이 없습니다.",
+                        image: ""
                     };
                 }
                 try {
@@ -234,7 +237,8 @@
                     if (!data || typeof data !== "object") {
                         return {
                             title: found.resultType || "-",
-                            description: found.summary || "결과 요약이 없습니다."
+                            description: found.summary || "결과 요약이 없습니다.",
+                            image: ""
                         };
                     }
                     const resultSettings = data.resultSettings && typeof data.resultSettings === "object"
@@ -249,12 +253,14 @@
 
                     return {
                         title: String(resultConfig.title || `${found.resultType || ""} 유형`).trim(),
-                        description: String(resultConfig.content || mappedDescriptions[found.resultType] || found.summary || "결과 요약이 없습니다.").trim()
+                        description: String(resultConfig.content || mappedDescriptions[found.resultType] || found.summary || "결과 요약이 없습니다.").trim(),
+                        image: String(resultConfig.image || data.resultImage || "").trim()
                     };
                 } catch (error) {
                     return {
                         title: found.resultType || "-",
-                        description: found.summary || "결과 요약이 없습니다."
+                        description: found.summary || "결과 요약이 없습니다.",
+                        image: ""
                     };
                 }
             }
@@ -373,6 +379,15 @@
                 titleEl.textContent = found.testTitle || "테스트";
                 typeEl.innerHTML = renderResultContentHtml(latest.title || found.resultType || "-");
                 descriptionEl.innerHTML = renderResultContentHtml(latest.description || found.summary || "결과 요약이 없습니다.");
+                if (recentGuideImageEl) {
+                    if (latest.image) {
+                        recentGuideImageEl.src = latest.image;
+                        recentGuideImageEl.hidden = false;
+                    } else {
+                        recentGuideImageEl.removeAttribute("src");
+                        recentGuideImageEl.hidden = true;
+                    }
+                }
                 shareSectionEl.hidden = false;
                 detailEl.hidden = false;
                 await loadRecommendedTests(found.testId || "");

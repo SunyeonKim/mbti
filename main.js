@@ -7,6 +7,7 @@ const nextBtn = document.getElementById("next-btn");
 const completionContainer = document.getElementById("completion-container");
 const viewResultBtn = document.getElementById("view-result-btn");
 const resultContainer = document.getElementById("result-container");
+const resultTitleEl = document.getElementById("result-title");
 const resultEl = document.getElementById("result");
 const resultDescriptionEl = document.getElementById("result-description");
 const resultGuideImageEl = document.getElementById("result-guide-image");
@@ -1032,6 +1033,9 @@ function showResult() {
         progressBlockEl.hidden = true;
     }
     setShareVisibility(false, true);
+    if (resultTitleEl) {
+        resultTitleEl.textContent = `${getLocalizedTestTitle(currentTest)} 결과`;
+    }
 
     resultEl.innerHTML = renderResultContentHtml(localizedResultTitle);
     resultDescriptionEl.innerHTML = renderResultContentHtml(localizedResultContent);
@@ -1040,8 +1044,9 @@ function showResult() {
     renderRecentResults();
 
     if (resultGuideImageEl) {
-        if (resultConfig.image || currentTest.resultImage) {
-            resultGuideImageEl.src = resultConfig.image || currentTest.resultImage;
+        const resultImageUrl = String(resultConfig.image || currentTest.resultImage || "").trim();
+        if (resultImageUrl) {
+            resultGuideImageEl.src = resultImageUrl;
             resultGuideImageEl.hidden = false;
         } else {
             resultGuideImageEl.removeAttribute("src");

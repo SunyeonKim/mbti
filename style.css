@@ -640,6 +640,11 @@ button:hover,
     margin: 0.35rem auto 0.95rem;
 }
 
+.recent-result-guide-image {
+    max-width: none;
+    margin: 0.75rem 0 0.95rem;
+}
+
 .share-section {
     margin-top: 1.25rem;
     padding-top: 1rem;
