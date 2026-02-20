@@ -6,6 +6,7 @@ const MBTI_TYPES = ["", "E", "I", "N", "S", "T", "F", "J", "P"];
 const MBTI_RESULT_TYPES = ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP", "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"];
 const PAGE_SIZE = 15;
 const DEFAULT_TEST_SEED_KEY = "default-mbti-personality-v1";
+const EXCEL_CELL_TEXT_LIMIT = 32767;
 
 const loginPanelEl = document.getElementById("admin-login-panel");
 const appEl = document.getElementById("admin-app");
@@ -217,6 +218,27 @@ function createEmptyResultSettings() {
 function normalizeResultSettings(raw) {
     const base = createEmptyResultSettings();
     const source = raw && typeof raw === "object" ? raw : {};
+
+    if (Array.isArray(source)) {
+        source.forEach((item) => {
+            if (!item || typeof item !== "object") {
+                return;
+            }
+            const key = String(item.mbti || item.type || "").trim().toUpperCase();
+            if (!MBTI_RESULT_TYPES.includes(key)) {
+                return;
+            }
+            base[key] = {
+                title: String(item.title || item.titleKo || item.title_ko || ""),
+                content: String(item.content || item.contentKo || item.content_ko || ""),
+                image: String(item.image || item.imageUrl || item.image_url || ""),
+                titleEn: String(item.titleEn || item.title_en || ""),
+                contentEn: String(item.contentEn || item.content_en || "")
+            };
+        });
+        return base;
+    }
+
     MBTI_RESULT_TYPES.forEach((mbti) => {
         const item = source[mbti] && typeof source[mbti] === "object" ? source[mbti] : {};
         base[mbti] = {
@@ -876,6 +898,67 @@ function parseBooleanCell(value, defaultValue = false) {
     return ["1", "true", "yes", "y", "노출", "추천"].includes(normalized);
 }
 
+function normalizeExcelHeaderKey(key) {
+    return String(key || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[<>{}\[\]()]/g, "")
+        .replace(/[\s_-]+/g, "");
+}
+
+function findRowValueByHeaderAliases(row, aliases) {
+    if (!row || typeof row !== "object") {
+        return "";
+    }
+    const keys = Object.keys(row);
+    for (const alias of aliases) {
+        const aliasKey = normalizeExcelHeaderKey(alias);
+        const foundKey = keys.find((k) => normalizeExcelHeaderKey(k) === aliasKey);
+        if (!foundKey) {
+            continue;
+        }
+        const value = row[foundKey];
+        if (value !== null && value !== undefined) {
+            return value;
+        }
+    }
+    return "";
+}
+
+function extractMbtiFromResultRow(row) {
+    const direct = String(findRowValueByHeaderAliases(row, ["mbti", "type", "result_type", "유형"]) || "")
+        .trim()
+        .toUpperCase();
+    if (MBTI_RESULT_TYPES.includes(direct)) {
+        return direct;
+    }
+
+    const values = Object.values(row || {});
+    for (const value of values) {
+        const candidate = String(value || "").trim().toUpperCase();
+        if (MBTI_RESULT_TYPES.includes(candidate)) {
+            return candidate;
+        }
+    }
+    return "";
+}
+
+function fitExcelCellText(value, options = {}) {
+    const {
+        emptyIfTooLongDataUrl = true
+    } = options;
+    const text = String(value || "");
+    if (text.length <= EXCEL_CELL_TEXT_LIMIT) {
+        return text;
+    }
+
+    if (emptyIfTooLongDataUrl && /^data:image\//i.test(text)) {
+        return "";
+    }
+
+    return text.slice(0, EXCEL_CELL_TEXT_LIMIT);
+}
+
 function safeFileName(name, fallback = "mbti-test") {
     const cleaned = String(name || "")
         .replace(/[<>:"/\\|?*\x00-\x1F]/g, " ")
@@ -900,11 +983,11 @@ function buildExcelWorkbookFromTestItem(item) {
     }
     const wb = XLSX.utils.book_new();
     const basicRows = [{
-        title_ko: String(item.title || "").trim(),
-        title_en: String(item.titleEn || "").trim(),
-        card_title_ko: String(item.cardTitle || item.title || "").trim(),
-        card_title_en: String(item.cardTitleEn || item.titleEn || "").trim(),
-        thumbnail_url: String(item.thumbnail || "").trim(),
+        title_ko: fitExcelCellText(String(item.title || "").trim()),
+        title_en: fitExcelCellText(String(item.titleEn || "").trim()),
+        card_title_ko: fitExcelCellText(String(item.cardTitle || item.title || "").trim()),
+        card_title_en: fitExcelCellText(String(item.cardTitleEn || item.titleEn || "").trim()),
+        thumbnail_url: fitExcelCellText(String(item.thumbnail || "").trim()),
         is_recommended: Boolean(item.isRecommended) ? "true" : "false",
         is_published: Boolean(item.isPublished) ? "true" : "false"
     }];
@@ -914,15 +997,15 @@ function buildExcelWorkbookFromTestItem(item) {
         const answers = Array.isArray(question.answers) ? question.answers.slice(0, 4) : [];
         const row = {
             order: index + 1,
-            question_ko: String(question.question || "").trim(),
-            question_en: String(question.questionEn || "").trim()
+            question_ko: fitExcelCellText(String(question.question || "").trim()),
+            question_en: fitExcelCellText(String(question.questionEn || "").trim())
         };
 
         for (let i = 1; i <= 4; i += 1) {
             const answer = answers[i - 1] || {};
             const scoreEntries = normalizeExcelScoreEntries(answer.scores);
-            row[`answer${i}_ko`] = String(answer.text || "").trim();
-            row[`answer${i}_en`] = String(answer.textEn || "").trim();
+            row[`answer${i}_ko`] = fitExcelCellText(String(answer.text || "").trim());
+            row[`answer${i}_en`] = fitExcelCellText(String(answer.textEn || "").trim());
             row[`answer${i}_type1`] = scoreEntries[0] ? scoreEntries[0][0] : "";
             row[`answer${i}_score1`] = scoreEntries[0] ? scoreEntries[0][1] : 0;
             row[`answer${i}_type2`] = scoreEntries[1] ? scoreEntries[1][0] : "";
@@ -943,11 +1026,11 @@ function buildExcelWorkbookFromTestItem(item) {
             : {};
         return {
             mbti,
-            title_ko: String(setting.title || `${mbti} 유형`).trim(),
-            title_en: String(setting.titleEn || "").trim(),
-            content_ko: String(setting.content || mbtiDescriptions[mbti] || "").trim(),
-            content_en: String(setting.contentEn || "").trim(),
-            image_url: String(setting.image || "").trim()
+            title_ko: fitExcelCellText(String(setting.title || `${mbti} 유형`).trim()),
+            title_en: fitExcelCellText(String(setting.titleEn || "").trim()),
+            content_ko: fitExcelCellText(String(setting.content || mbtiDescriptions[mbti] || "").trim(), { emptyIfTooLongDataUrl: false }),
+            content_en: fitExcelCellText(String(setting.contentEn || "").trim(), { emptyIfTooLongDataUrl: false }),
+            image_url: fitExcelCellText(String(setting.image || "").trim())
         };
     });
 
@@ -1095,16 +1178,16 @@ function parseExcelResultSettings(rows) {
         return settings;
     }
     rows.forEach((row) => {
-        const mbti = String(row.mbti || "").trim().toUpperCase();
+        const mbti = extractMbtiFromResultRow(row);
         if (!MBTI_RESULT_TYPES.includes(mbti)) {
             return;
         }
         settings[mbti] = {
-            title: String(row.title_ko || "").trim(),
-            titleEn: String(row.title_en || "").trim(),
-            content: String(row.content_ko || "").trim(),
-            contentEn: String(row.content_en || "").trim(),
-            image: String(row.image_url || "").trim()
+            title: String(findRowValueByHeaderAliases(row, ["title_ko", "titleko", "title"]) || "").trim(),
+            titleEn: String(findRowValueByHeaderAliases(row, ["title_en", "titleen"]) || "").trim(),
+            content: String(findRowValueByHeaderAliases(row, ["content_ko", "contentko", "content"]) || "").trim(),
+            contentEn: String(findRowValueByHeaderAliases(row, ["content_en", "contenten"]) || "").trim(),
+            image: String(findRowValueByHeaderAliases(row, ["image_url", "image", "imageurl"]) || "").trim()
         };
     });
     return settings;
