@@ -6,6 +6,17 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6098747212157218"
          crossorigin="anonymous"></script>
     <title>최근 테스트 결과 | 모두의 테스트</title>
+    <meta name="description" content="최근 테스트 결과를 확인하고 추천 테스트를 이어서 즐겨보세요.">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <link rel="canonical" href="https://sunyeonkim.github.io/mbti/result.html">
+    <meta property="og:site_name" content="모두의 테스트">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="최근 테스트 결과 | 모두의 테스트">
+    <meta property="og:description" content="최근 테스트 결과를 확인하고 추천 테스트를 이어서 즐겨보세요.">
+    <meta property="og:url" content="https://sunyeonkim.github.io/mbti/result.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="최근 테스트 결과 | 모두의 테스트">
+    <meta name="twitter:description" content="최근 테스트 결과를 확인하고 추천 테스트를 이어서 즐겨보세요.">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -157,6 +168,67 @@
                 return escapeHtml(source).replace(/\r?\n/g, "<br>");
             }
 
+            function setMetaTagValue(selector, attrName, attrValue, content) {
+                let tag = document.head.querySelector(selector);
+                if (!tag) {
+                    tag = document.createElement("meta");
+                    tag.setAttribute(attrName, attrValue);
+                    document.head.appendChild(tag);
+                }
+                tag.setAttribute("content", String(content || "").trim());
+            }
+
+            function setCanonicalUrl(url) {
+                let link = document.head.querySelector("link[rel='canonical']");
+                if (!link) {
+                    link = document.createElement("link");
+                    link.setAttribute("rel", "canonical");
+                    document.head.appendChild(link);
+                }
+                link.setAttribute("href", String(url || window.location.href));
+            }
+
+            function updateSeoMetaFromResult(latest, found) {
+                const baseTitle = "모두의 테스트";
+                const testTitle = String((latest && latest.testTitle) || (found && found.resultType) || "최근 테스트 결과").trim();
+                const cardTitle = String((latest && latest.cardTitle) || (found && found.testTitle) || "최근 테스트 결과").trim();
+                const ogImage = String((latest && latest.thumbnail) || "").trim();
+                const defaultOgImage = `${window.location.origin}/resource/og-default.svg`;
+                const fullTitle = `${testTitle} | ${baseTitle}`;
+                const canonical = window.location.href;
+
+                document.title = fullTitle;
+                setMetaTagValue("meta[name='description']", "name", "description", cardTitle);
+                setMetaTagValue("meta[property='og:title']", "property", "og:title", testTitle);
+                setMetaTagValue("meta[property='og:description']", "property", "og:description", cardTitle);
+                setMetaTagValue("meta[property='og:url']", "property", "og:url", canonical);
+                setMetaTagValue("meta[property='og:image']", "property", "og:image", ogImage || defaultOgImage);
+                setMetaTagValue("meta[name='twitter:card']", "name", "twitter:card", "summary_large_image");
+                setMetaTagValue("meta[name='twitter:title']", "name", "twitter:title", testTitle);
+                setMetaTagValue("meta[name='twitter:description']", "name", "twitter:description", cardTitle);
+                setMetaTagValue("meta[name='twitter:image']", "name", "twitter:image", ogImage || defaultOgImage);
+                setCanonicalUrl(canonical);
+            }
+
+            function resolveMatchImagePlaceholders(rawText, resultSettings) {
+                const source = String(rawText || "");
+                if (!source) {
+                    return "";
+                }
+                const settings = resultSettings && typeof resultSettings === "object" ? resultSettings : {};
+                return source.replace(/\{([EI][NS][TF][JP])-이미지\}/gi, (full, typeKey) => {
+                    const mbti = String(typeKey || "").toUpperCase();
+                    const config = settings[mbti] && typeof settings[mbti] === "object" ? settings[mbti] : {};
+                    const imageUrl = String(config.image || "").trim();
+                    if (!imageUrl) {
+                        return "";
+                    }
+                    const safeUrl = escapeHtml(imageUrl);
+                    const safeAlt = escapeHtml(`${mbti} 유형 이미지`);
+                    return `<br><img src="${safeUrl}" alt="${safeAlt}" loading="lazy" style="display:block;max-width:100%;height:auto;border-radius:12px;margin-top:10px;">`;
+                });
+            }
+
             function isMobileDevice() {
                 return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
             }
@@ -228,7 +300,11 @@
                     return {
                         title: found.resultType || "-",
                         description: found.summary || "결과 요약이 없습니다.",
-                        image: ""
+                        image: "",
+                        resultSettings: {},
+                        testTitle: found.testTitle || "",
+                        cardTitle: found.testTitle || "",
+                        thumbnail: ""
                     };
                 }
                 try {
@@ -238,7 +314,11 @@
                         return {
                             title: found.resultType || "-",
                             description: found.summary || "결과 요약이 없습니다.",
-                            image: ""
+                            image: "",
+                            resultSettings: {},
+                            testTitle: found.testTitle || "",
+                            cardTitle: found.testTitle || "",
+                            thumbnail: ""
                         };
                     }
                     const resultSettings = data.resultSettings && typeof data.resultSettings === "object"
@@ -254,13 +334,21 @@
                     return {
                         title: String(resultConfig.title || `${found.resultType || ""} 유형`).trim(),
                         description: String(resultConfig.content || mappedDescriptions[found.resultType] || found.summary || "결과 요약이 없습니다.").trim(),
-                        image: String(resultConfig.image || data.resultImage || "").trim()
+                        image: String(resultConfig.image || data.resultImage || "").trim(),
+                        resultSettings,
+                        testTitle: String(data.title || data.cardTitle || found.testTitle || "").trim(),
+                        cardTitle: String(data.cardTitle || data.title || found.testTitle || "").trim(),
+                        thumbnail: String(data.thumbnail || "").trim()
                     };
                 } catch (error) {
                     return {
                         title: found.resultType || "-",
                         description: found.summary || "결과 요약이 없습니다.",
-                        image: ""
+                        image: "",
+                        resultSettings: {},
+                        testTitle: found.testTitle || "",
+                        cardTitle: found.testTitle || "",
+                        thumbnail: ""
                     };
                 }
             }
@@ -369,6 +457,7 @@
                 }
 
                 const latest = await loadLatestDescription(found);
+                updateSeoMetaFromResult(latest, found);
                 const shareUrl = `${window.location.origin}/index.html?test=${encodeURIComponent(found.testId || "")}`;
                 shareContext = {
                     shareUrl,
@@ -378,8 +467,16 @@
 
                 titleEl.textContent = found.testTitle || "테스트";
                 typeEl.innerHTML = renderResultContentHtml(latest.title || found.resultType || "-");
-                descriptionEl.innerHTML = renderResultContentHtml(latest.description || found.summary || "결과 요약이 없습니다.");
+                const resolvedDescription = resolveMatchImagePlaceholders(
+                    latest.description || found.summary || "결과 요약이 없습니다.",
+                    latest.resultSettings
+                );
+                descriptionEl.innerHTML = renderResultContentHtml(resolvedDescription);
                 if (recentGuideImageEl) {
+                    recentGuideImageEl.onerror = () => {
+                        recentGuideImageEl.removeAttribute("src");
+                        recentGuideImageEl.hidden = true;
+                    };
                     if (latest.image) {
                         recentGuideImageEl.src = latest.image;
                         recentGuideImageEl.hidden = false;

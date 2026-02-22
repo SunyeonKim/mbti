@@ -235,6 +235,54 @@ function getLocalizedTestTitle(test) {
     return getLocalizedText(test.title, test.titleEn) || "테스트";
 }
 
+function setMetaTagValue(selector, attrName, attrValue, content) {
+    let tag = document.head.querySelector(selector);
+    if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute(attrName, attrValue);
+        document.head.appendChild(tag);
+    }
+    tag.setAttribute("content", String(content || "").trim());
+}
+
+function setCanonicalUrl(url) {
+    let link = document.head.querySelector("link[rel='canonical']");
+    if (!link) {
+        link = document.createElement("link");
+        link.setAttribute("rel", "canonical");
+        document.head.appendChild(link);
+    }
+    link.setAttribute("href", String(url || window.location.href));
+}
+
+function updateSeoMeta(test) {
+    const baseTitle = "모두의 테스트";
+    const baseDescription = "연애, 소비, 여행, 회사생활까지 다양한 MBTI 테스트를 한 번에 즐겨보세요.";
+    const safeTest = test && typeof test === "object" ? test : null;
+    const title = safeTest ? getLocalizedTestTitle(safeTest) : baseTitle;
+    const description = safeTest ? (getLocalizedCardTitle(safeTest) || title) : baseDescription;
+    const pageTitle = safeTest ? `${title} | ${baseTitle}` : baseTitle;
+    const ogImage = safeTest ? String(safeTest.thumbnail || "").trim() : "";
+    const defaultOgImage = `${window.location.origin}/resource/og-default.svg`;
+    const selectedImage = ogImage || defaultOgImage;
+    const canonical = window.location.href;
+
+    document.title = pageTitle;
+    setMetaTagValue("meta[name='description']", "name", "description", description);
+    setMetaTagValue("meta[name='robots']", "name", "robots", "index,follow,max-image-preview:large");
+    setMetaTagValue("meta[property='og:site_name']", "property", "og:site_name", baseTitle);
+    setMetaTagValue("meta[property='og:type']", "property", "og:type", "website");
+    setMetaTagValue("meta[property='og:title']", "property", "og:title", title);
+    setMetaTagValue("meta[property='og:description']", "property", "og:description", description);
+    setMetaTagValue("meta[property='og:url']", "property", "og:url", canonical);
+    setMetaTagValue("meta[property='og:image']", "property", "og:image", selectedImage);
+    setMetaTagValue("meta[name='twitter:card']", "name", "twitter:card", "summary_large_image");
+    setMetaTagValue("meta[name='twitter:title']", "name", "twitter:title", title);
+    setMetaTagValue("meta[name='twitter:description']", "name", "twitter:description", description);
+    setMetaTagValue("meta[name='twitter:image']", "name", "twitter:image", selectedImage);
+    setCanonicalUrl(canonical);
+}
+
 async function loadTests() {
     const services = window.firebaseServices || {};
     const db = services.db;
@@ -737,6 +785,25 @@ function renderResultContentHtml(rawText) {
     return escapeHtml(source).replace(/\r?\n/g, "<br>");
 }
 
+function resolveMatchImagePlaceholders(rawText, resultSettings) {
+    const source = String(rawText || "");
+    if (!source) {
+        return "";
+    }
+    const settings = resultSettings && typeof resultSettings === "object" ? resultSettings : {};
+    return source.replace(/\{([EI][NS][TF][JP])-이미지\}/gi, (full, typeKey) => {
+        const mbti = String(typeKey || "").toUpperCase();
+        const config = settings[mbti] && typeof settings[mbti] === "object" ? settings[mbti] : {};
+        const imageUrl = String(config.image || "").trim();
+        if (!imageUrl) {
+            return "";
+        }
+        const safeUrl = escapeHtml(imageUrl);
+        const safeAlt = escapeHtml(`${mbti} 유형 이미지`);
+        return `<br><img src="${safeUrl}" alt="${safeAlt}" loading="lazy" style="display:block;max-width:100%;height:auto;border-radius:12px;margin-top:10px;">`;
+    });
+}
+
 function htmlToPlainText(rawText) {
     const html = renderResultContentHtml(rawText);
     const container = document.createElement("div");
@@ -881,6 +948,7 @@ function setLanguage(lang) {
     }
 
     updateThemeControlLabel();
+    updateSeoMeta(currentTest);
 }
 
 function showListView() {
@@ -890,6 +958,7 @@ function showListView() {
     const url = new URL(window.location.href);
     url.searchParams.delete("test");
     window.history.replaceState({}, "", url);
+    updateSeoMeta(null);
 }
 
 function scrollToSurveyTop() {
@@ -929,6 +998,7 @@ function startTestById(testId) {
     const url = new URL(window.location.href);
     url.searchParams.set("test", currentTest.id);
     window.history.replaceState({}, "", url);
+    updateSeoMeta(currentTest);
 
     showQuestion();
     scrollToSurveyTop();
@@ -1037,14 +1107,20 @@ function showResult() {
         resultTitleEl.textContent = `${getLocalizedTestTitle(currentTest)} 결과`;
     }
 
+    const resolvedResultContent = resolveMatchImagePlaceholders(localizedResultContent, resultSettings);
+
     resultEl.innerHTML = renderResultContentHtml(localizedResultTitle);
-    resultDescriptionEl.innerHTML = renderResultContentHtml(localizedResultContent);
+    resultDescriptionEl.innerHTML = renderResultContentHtml(resolvedResultContent);
     renderResultRecommendations();
-    saveRecentResult(currentTest, mbtiType, localizedResultContent || "");
+    saveRecentResult(currentTest, mbtiType, resolvedResultContent || "");
     renderRecentResults();
 
     if (resultGuideImageEl) {
         const resultImageUrl = String(resultConfig.image || currentTest.resultImage || "").trim();
+        resultGuideImageEl.onerror = () => {
+            resultGuideImageEl.removeAttribute("src");
+            resultGuideImageEl.hidden = true;
+        };
         if (resultImageUrl) {
             resultGuideImageEl.src = resultImageUrl;
             resultGuideImageEl.hidden = false;

@@ -1504,13 +1504,13 @@ ${consHtml}
 
 <br><br>
 <h3>나와 잘 맞는 유형</h3>
-<p><strong>1위 : ${matchFirst.title}</strong><br>
+<p><strong>1위 ${matchFirst.title}</strong><br>
 - ${matchFirst.points[0]}<br>
 - ${matchFirst.points[1]}<br>
 - ${matchFirst.points[2]}
 </p>
 
-<p><strong>2위 : ${matchSecond.title}</strong><br>
+<p><strong>2위 ${matchSecond.title}</strong><br>
 - ${matchSecond.points[0]}<br>
 - ${matchSecond.points[1]}<br>
 - ${matchSecond.points[2]}
@@ -1866,13 +1866,13 @@ ${consHtml}
 
 <br><br>
 <h3>나와 잘 맞는 유형</h3>
-<p><strong>1위 : ${matchFirst.title}</strong><br>
+<p><strong>1위 ${matchFirst.title}</strong><br>
 - ${matchFirst.points[0]}<br>
 - ${matchFirst.points[1]}<br>
 - ${matchFirst.points[2]}
 </p>
 
-<p><strong>2위 : ${matchSecond.title}</strong><br>
+<p><strong>2위 ${matchSecond.title}</strong><br>
 - ${matchSecond.points[0]}<br>
 - ${matchSecond.points[1]}<br>
 - ${matchSecond.points[2]}
@@ -2212,13 +2212,13 @@ ${consHtml}
 
 <br><br>
 <h3>나와 잘 맞는 유형</h3>
-<p><strong>1위 : ${matchFirst.title}</strong><br>
+<p><strong>1위 ${matchFirst.title}</strong><br>
 - ${matchFirst.points[0]}<br>
 - ${matchFirst.points[1]}<br>
 - ${matchFirst.points[2]}
 </p>
 
-<p><strong>2위 : ${matchSecond.title}</strong><br>
+<p><strong>2위 ${matchSecond.title}</strong><br>
 - ${matchSecond.points[0]}<br>
 - ${matchSecond.points[1]}<br>
 - ${matchSecond.points[2]}
@@ -2331,13 +2331,13 @@ ${consHtml}
 
 <br><br>
 <h3>나와 잘 맞는 유형</h3>
-<p><strong>1위 : ${matchFirst}</strong><br>
+<p><strong>1위 ${matchFirst}</strong><br>
 - 서로 부족한 부분을 자연스럽게 보완<br>
 - 관점이 달라 문제 해결 속도 상승<br>
 - 오래 갈수록 시너지 폭이 커짐
 </p>
 
-<p><strong>2위 : ${matchSecond}</strong><br>
+<p><strong>2위 ${matchSecond}</strong><br>
 - 분위기와 실행의 균형이 좋아짐<br>
 - 지치기 쉬운 구간에서 회복력 보완<br>
 - 관계 만족도와 성과를 함께 챙길 수 있음
@@ -2628,6 +2628,24 @@ function normalizeResultContentHtml(raw) {
         "<br><br>\n<h3>나와 잘 맞는 유형</h3>\n"
     );
 
+    content = content.replace(/([12]위)\s*:\s*([EI][NS][TF][JP])/gi, "$1 $2");
+    content = content.replace(/([12]위)\s{2,}([EI][NS][TF][JP])/gi, "$1 $2");
+
+    content = content.replace(
+        /<p>([\s\S]*?<strong>\s*([12]위)\s+([EI][NS][TF][JP])[\s\S]*?<\/strong>[\s\S]*?)<\/p>/gi,
+        (full, inner, rank, mbti) => {
+            const upperMbti = String(mbti || "").toUpperCase();
+            if (!upperMbti) {
+                return full;
+            }
+            const tokenPattern = new RegExp(`\\{\\s*${upperMbti}\\s*-이미지\\s*\\}`, "i");
+            if (tokenPattern.test(inner)) {
+                return `<p>${inner}</p>`;
+            }
+            return `<p>${String(inner || "").trim()}<br>{${upperMbti}-이미지}</p>`;
+        }
+    );
+
     return content.trim();
 }
 
@@ -2652,51 +2670,32 @@ async function ensureLegacyResultContentCleanup() {
         return;
     }
 
-    const seen = new Set();
-    const targets = [
-        { field: "seedKey", value: SURFING_TEST_SEED_KEY },
-        { field: "title", value: "서핑 MBTI 테스트" },
-        { field: "cardTitle", value: "서핑 MBTI 테스트" },
-        { field: "seedKey", value: CAMPING_TEST_SEED_KEY },
-        { field: "title", value: "캠핑 MBTI 테스트" },
-        { field: "cardTitle", value: "캠핑 MBTI 테스트" },
-        { field: "title", value: "러닝 MBTI 테스트" },
-        { field: "cardTitle", value: "러닝 MBTI 테스트" }
-    ];
-
-    for (const target of targets) {
-        try {
-            const snapshot = await db.collection("tests").where(target.field, "==", target.value).get();
-            for (const doc of snapshot.docs) {
-                if (seen.has(doc.id)) {
-                    continue;
-                }
-                seen.add(doc.id);
-
-                const data = doc.data() || {};
-                const sanitized = sanitizeResultSettingsForLegacyFormat(data.resultSettings);
-                if (!sanitized.changed) {
-                    continue;
-                }
-
-                const mbtiDescriptions = MBTI_RESULT_TYPES.reduce((acc, mbti) => {
-                    const content = String(sanitized.resultSettings[mbti] && sanitized.resultSettings[mbti].content || "").trim();
-                    if (content) {
-                        acc[mbti] = content;
-                    }
-                    return acc;
-                }, {});
-
-                await db.collection("tests").doc(doc.id).update({
-                    resultSettings: sanitized.resultSettings,
-                    mbtiDescriptions,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedById: getCurrentAdminId()
-                });
+    try {
+        const snapshot = await db.collection("tests").get();
+        for (const doc of snapshot.docs) {
+            const data = doc.data() || {};
+            const sanitized = sanitizeResultSettingsForLegacyFormat(data.resultSettings);
+            if (!sanitized.changed) {
+                continue;
             }
-        } catch (error) {
-            console.error("결과 화면 내용 포맷 정리 실패:", target, error);
+
+            const mbtiDescriptions = MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+                const content = String(sanitized.resultSettings[mbti] && sanitized.resultSettings[mbti].content || "").trim();
+                if (content) {
+                    acc[mbti] = content;
+                }
+                return acc;
+            }, {});
+
+            await db.collection("tests").doc(doc.id).update({
+                resultSettings: sanitized.resultSettings,
+                mbtiDescriptions,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedById: getCurrentAdminId()
+            });
         }
+    } catch (error) {
+        console.error("결과 화면 내용 포맷 정리 실패:", error);
     }
 }
 
