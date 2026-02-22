@@ -7,6 +7,7 @@ const MBTI_RESULT_TYPES = ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ
 const PAGE_SIZE = 15;
 const DEFAULT_TEST_SEED_KEY = "default-mbti-personality-v1";
 const SURFING_TEST_SEED_KEY = "surfing-mbti-youth-v1";
+const CAMPING_TEST_SEED_KEY = "camping-mbti-3040-v1";
 const EXCEL_CELL_TEXT_LIMIT = 32767;
 
 const loginPanelEl = document.getElementById("admin-login-panel");
@@ -1471,14 +1472,12 @@ function getSurfingSeedQuestions() {
 function createSurfingSeedResultSettings() {
     const settings = createEmptyResultSettings();
 
-    function buildContent(title, summary, interpretation, pros, cons, matchFirst, matchSecond) {
+    function buildContent(summary, interpretation, pros, cons, matchFirst, matchSecond) {
         const interpretationHtml = interpretation.map((line) => `<p>${line}</p>`).join("\n");
         const prosHtml = pros.map((item) => `<li>${item}</li>`).join("");
         const consHtml = cons.map((item) => `<li>${item}</li>`).join("");
 
-        return `${title}
-
-<h3>한 줄 요약</h3>
+        return `<h3>한 줄 요약</h3>
 <p>${summary}</p>
 
 <h4>유형 해석</h4>
@@ -1678,7 +1677,6 @@ ${consHtml}
         }
         settings[mbti].title = item.title;
         settings[mbti].content = buildContent(
-            item.title,
             item.summary,
             item.interpretation,
             item.pros,
@@ -1689,6 +1687,422 @@ ${consHtml}
     });
 
     return settings;
+}
+
+function getCampingSeedQuestions() {
+    return [
+        {
+            question: "캠핑 공지 올리면 당신은?",
+            answers: [
+                { text: "단톡방 일정표까지 만들어 올린다.", scores: { E: 2 } },
+                { text: "친한 멤버 몇 명에게만 먼저 찔러본다.", scores: { E: 1, I: 1 } },
+                { text: "조용히 다녀온 뒤 후기만 공유한다.", scores: { I: 2 } },
+                { text: "이번엔 혼캠이 답이라고 생각한다.", scores: { I: 2 } }
+            ]
+        },
+        {
+            question: "캠핑장 고를 때 제일 먼저 보는 건?",
+            answers: [
+                { text: "화장실/전기/동선 같은 실사용 정보.", scores: { S: 2 } },
+                { text: "실사용 후기 + 감성 포인트 둘 다.", scores: { S: 1, N: 1 } },
+                { text: "풍경, 분위기, 스토리 있는 장소.", scores: { N: 2 } },
+                { text: "\"여기 가면 인생샷 각\"이라는 직감.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "일행이 장비를 안 챙겨왔다면?",
+            answers: [
+                { text: "원인부터 짚고 다음 체크리스트를 만든다.", scores: { T: 2 } },
+                { text: "일단 괜찮다고 안심부터 시킨다.", scores: { F: 2 } },
+                { text: "해결 방법 설명 + 기분 케어를 같이 한다.", scores: { T: 1, F: 1 } },
+                { text: "농담으로 분위기 풀고 같이 해결한다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "출발 준비 스타일은?",
+            answers: [
+                { text: "전날 짐 분류, 당일 체크까지 끝낸다.", scores: { J: 2 } },
+                { text: "큰 짐은 전날, 자잘한 건 당일 조정한다.", scores: { J: 1, P: 1 } },
+                { text: "당일 컨디션 보고 대충 맞춘다.", scores: { P: 2 } },
+                { text: "차에 싣다 보면 어떻게든 된다.", scores: { P: 2 } }
+            ]
+        },
+        {
+            question: "옆 사이트와 자연스럽게 친해질 기회가 오면?",
+            answers: [
+                { text: "먼저 인사하고 정보 교환한다.", scores: { E: 2 } },
+                { text: "분위기 보며 필요한 말만 건넨다.", scores: { E: 1, I: 1 } },
+                { text: "우리 팀 시간에 집중한다.", scores: { I: 2 } },
+                { text: "조용한 밤 분위기가 좋아서 거리 둔다.", scores: { I: 2 } }
+            ]
+        },
+        {
+            question: "새 장비 살 때 당신의 방식은?",
+            answers: [
+                { text: "스펙표와 내 사용 패턴부터 대조한다.", scores: { S: 2 } },
+                { text: "기능 확인 후 오래 쓸 그림을 본다.", scores: { S: 1, N: 1 } },
+                { text: "브랜드 철학과 무드에 끌린다.", scores: { N: 2 } },
+                { text: "이 장비로 만들 장면을 상상한다.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "비 예보가 떴을 때 일행이 흔들리면?",
+            answers: [
+                { text: "대체 플랜/리스크를 표로 정리한다.", scores: { T: 2 } },
+                { text: "다들 부담 없는 선택을 먼저 묻는다.", scores: { F: 2 } },
+                { text: "사실과 감정 둘 다 반영해 결론 낸다.", scores: { T: 1, F: 1 } },
+                { text: "오늘은 마음 편한 쪽으로 가자고 한다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "1박 2일 캠핑 일정은 보통?",
+            answers: [
+                { text: "시간대별로 식사/불멍/취침까지 구성한다.", scores: { J: 2 } },
+                { text: "핵심 일정만 정하고 나머진 유동 처리.", scores: { J: 1, P: 1 } },
+                { text: "현장 분위기에 맞춰 즉흥으로 간다.", scores: { P: 2 } },
+                { text: "계획은 출발 전까지만 존재한다.", scores: { P: 2 } }
+            ]
+        },
+        {
+            question: "캠핑 후기를 남길 때 당신은?",
+            answers: [
+                { text: "사람 태그하고 에피소드까지 길게 올린다.", scores: { E: 2 } },
+                { text: "핵심 사진만 추려 공유한다.", scores: { E: 1, I: 1 } },
+                { text: "개인 기록장에만 조용히 남긴다.", scores: { I: 2 } },
+                { text: "기억은 마음에 저장하고 끝.", scores: { I: 2 } }
+            ]
+        },
+        {
+            question: "캠핑 요리 담당이 된다면?",
+            answers: [
+                { text: "재료/화력/시간 계산으로 정확히 만든다.", scores: { S: 2 } },
+                { text: "기본 레시피에 현장 변수를 반영한다.", scores: { S: 1, N: 1 } },
+                { text: "무드 따라 창의 레시피를 시도한다.", scores: { N: 2 } },
+                { text: "오늘의 감성 메뉴를 즉흥으로 뽑는다.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "일행 사이 의견 충돌이 생기면?",
+            answers: [
+                { text: "기준을 명확히 세워 합리적으로 정리한다.", scores: { T: 2 } },
+                { text: "먼저 서로 기분부터 정리하게 돕는다.", scores: { F: 2 } },
+                { text: "원칙 + 관계를 같이 살리는 절충안을 낸다.", scores: { T: 1, F: 1 } },
+                { text: "분위기 풀면서 자연스럽게 타협시킨다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "아침 철수 루틴은?",
+            answers: [
+                { text: "정해둔 순서대로 분리수거까지 완료한다.", scores: { J: 2 } },
+                { text: "체크 포인트만 잡고 역할 분담한다.", scores: { J: 1, P: 1 } },
+                { text: "현장 상황 보며 우선순위 바꾼다.", scores: { P: 2 } },
+                { text: "막판 스퍼트로 한 번에 정리한다.", scores: { P: 2 } }
+            ]
+        },
+        {
+            question: "캠핑의 진짜 매력은 뭐라고 봐?",
+            answers: [
+                { text: "직접 몸 써서 완성하는 현실감.", scores: { S: 2 } },
+                { text: "현실감도 좋고, 새로운 영감도 좋다.", scores: { S: 1, N: 1 } },
+                { text: "일상 밖에서 얻는 상상력 확장.", scores: { N: 2 } },
+                { text: "가족/인생의 다음 장면을 떠올리게 함.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "캠핑 예산이 초과됐을 때 반응은?",
+            answers: [
+                { text: "항목별로 원인 분석하고 다음 기준 잡는다.", scores: { T: 2 } },
+                { text: "누구도 부담 느끼지 않게 정산부터 배려한다.", scores: { F: 2 } },
+                { text: "숫자 정리 + 관계 배려를 동시에 챙긴다.", scores: { T: 1, F: 1 } },
+                { text: "이번 추억 값이라고 웃고 넘긴다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "다음 캠핑 공지 문구를 쓴다면?",
+            answers: [
+                { text: "\"이번엔 전원 참여 각!\" 분위기 띄운다.", scores: { E: 2 } },
+                { text: "참여 의사만 먼저 간단히 묻는다.", scores: { E: 1, I: 1 } },
+                { text: "소규모로 조용히 공지한다.", scores: { I: 2 } },
+                { text: "혼캠 일정 먼저 확정하고 공유한다.", scores: { I: 2 } }
+            ]
+        }
+    ];
+}
+
+function createCampingSeedResultSettings() {
+    const settings = createEmptyResultSettings();
+
+    function buildContent(summary, interpretation, pros, cons, matchFirst, matchSecond) {
+        const interpretationHtml = interpretation.map((line) => `<p>${line}</p>`).join("\n");
+        const prosHtml = pros.map((item) => `<li>${item}</li>`).join("");
+        const consHtml = cons.map((item) => `<li>${item}</li>`).join("");
+
+        return `<h3>한 줄 요약</h3>
+<p>${summary}</p>
+
+<h4>유형 해석</h4>
+${interpretationHtml}
+
+<h4>장점</h4>
+<ul>
+${prosHtml}
+</ul>
+
+<h4>단점</h4>
+<ul>
+${consHtml}
+</ul>
+
+<h4>나와 잘 맞는 유형</h4>
+<p><strong>1위 : ${matchFirst.title}</strong><br>
+- ${matchFirst.points[0]}<br>
+- ${matchFirst.points[1]}<br>
+- ${matchFirst.points[2]}
+</p>
+
+<p><strong>2위 : ${matchSecond.title}</strong><br>
+- ${matchSecond.points[0]}<br>
+- ${matchSecond.points[1]}<br>
+- ${matchSecond.points[2]}
+</p>`;
+    }
+
+    const templates = {
+        INTJ: {
+            title: "<h2>당신은 INTJ : 베이스캠프 전략가 🧭🏕️</h2>",
+            summary: "캠핑도 결국 프로젝트 관리.",
+            interpretation: ["출발 전 이미 동선/역할/리스크까지 설계가 끝납니다.", "낭만도 좋지만 '운영 가능한 낭만'을 선호합니다.", "장기적으로 장비와 루틴을 최적화하는 타입입니다."],
+            pros: ["체계적 준비", "장기 계획 능력", "문제 예측 정확도", "실행 통제력"],
+            cons: ["즉흥성 부족", "완벽주의 피로", "타인 속도에 답답함"],
+            first: { title: "ENFP : 감성 불멍 메이커 🔥", points: ["현장 재미를 보완", "유연한 분위기 형성", "긴장 완화"] },
+            second: { title: "ESFP : 캠핑장 분위기 치어리더 🎉", points: ["에너지 상승", "관계 온도 강화", "즉흥 즐거움 추가"] }
+        },
+        INTP: {
+            title: "<h2>당신은 INTP : 장비 실험실 캠퍼 🛠️📐</h2>",
+            summary: "캠핑은 야외 연구 프로젝트.",
+            interpretation: ["타프 각도와 화력 효율까지 논리적으로 파고듭니다.", "원리를 이해하면 급속도로 숙련도가 올라갑니다.", "혼자 실험할 때 창의력이 최고치로 올라갑니다."],
+            pros: ["분석력 우수", "문제 해결 창의성", "학습 속도 빠름", "객관적 피드백"],
+            cons: ["실행 지연 가능", "루틴 유지 약함", "감정 소통이 건조할 수 있음"],
+            first: { title: "ENFJ : 팀 케어 리더 캠퍼 🤝", points: ["실행 동력 보완", "소통 온도 상승", "팀 연결 강화"] },
+            second: { title: "ESFJ : 패밀리 매니저 캠퍼 🍲", points: ["생활 리듬 안정", "협업 효율 향상", "현장 부담 완화"] }
+        },
+        ENTJ: {
+            title: "<h2>당신은 ENTJ : 원정대 총괄 디렉터 🚙📈</h2>",
+            summary: "캠핑도 목표 달성형 운영.",
+            interpretation: ["역할 분담과 시간 관리를 빠르게 구조화합니다.", "현장 의사결정이 선명하고 추진 속도가 빠릅니다.", "결과를 만드는 리더십이 강한 타입입니다."],
+            pros: ["결단력 강함", "운영 능력 탁월", "성과 중심 실행", "리더십 안정적"],
+            cons: ["압박감 줄 수 있음", "완급 조절 어려움", "휴식보다 효율 우선"],
+            first: { title: "INFP : 무드 기록가 캠퍼 🌌", points: ["감정 밸런스 보완", "의미 회복", "과열 완화"] },
+            second: { title: "ISFP : 감각 데코레이터 캠퍼 🫧", points: ["현재 감각 확장", "유연성 추가", "현장 여유 강화"] }
+        },
+        ENTP: {
+            title: "<h2>당신은 ENTP : 번뜩임 실험가 캠퍼 ⚡⛺</h2>",
+            summary: "새 아이디어로 캠핑장을 바꾸는 타입.",
+            interpretation: ["정해진 방식보다 새 시도를 즐깁니다.", "돌발 상황에서도 재치로 빠르게 대안을 냅니다.", "현장 변수를 재미로 전환하는 능력이 좋습니다."],
+            pros: ["창의적 전환 능력", "순발력 우수", "적응력 높음", "분위기 환기 능력"],
+            cons: ["마무리 약화 가능", "루틴 유지 약함", "리스크 과소평가 가능"],
+            first: { title: "ISTJ : 체크리스트 장인 캠퍼 📋", points: ["완성도 보완", "실행 안정성 강화", "누락 리스크 감소"] },
+            second: { title: "ISFJ : 안전 케어 코치 캠퍼 🛟", points: ["안전 감각 보완", "지속성 강화", "현장 피로 분산"] }
+        },
+        INFJ: {
+            title: "<h2>당신은 INFJ : 별빛 큐레이터 캠퍼 🌙✨</h2>",
+            summary: "캠핑을 마음 정리의 의식으로 만드는 타입.",
+            interpretation: ["공간의 분위기와 사람의 감정을 동시에 읽습니다.", "깊은 몰입과 의미 중심의 경험을 선호합니다.", "적은 인원에서 진짜 만족도를 크게 끌어올립니다."],
+            pros: ["통찰력 높음", "정서적 공감 우수", "몰입 깊음", "관계 질 관리 능력"],
+            cons: ["감정 소모 큼", "기다리다 기회 놓칠 수 있음", "혼자 부담 누적"],
+            first: { title: "ENTP : 번뜩임 실험가 캠퍼 ⚡", points: ["행동 전환 촉진", "새 시도 자극", "유쾌함 공급"] },
+            second: { title: "ESTP : 즉시출동 액션 캠퍼 🏃", points: ["실행 속도 보완", "현장 대응 강화", "과몰입 완화"] }
+        },
+        INFP: {
+            title: "<h2>당신은 INFP : 무드 기록가 캠퍼 🌌📝</h2>",
+            summary: "캠핑을 인생 장면으로 저장하는 타입.",
+            interpretation: ["감정이 맞는 순간에 최고의 만족을 느낍니다.", "사람과 장소의 의미를 오래 기억하는 스타일입니다.", "자기만의 취향 세계가 분명합니다."],
+            pros: ["감수성 풍부", "진정성 높은 관계", "개성 있는 취향", "내적 동기 강함"],
+            cons: ["기분 기복 영향", "현실 관리 약화 가능", "비교에 민감할 수 있음"],
+            first: { title: "ENTJ : 원정대 총괄 디렉터 🚙", points: ["목표 선명화", "실행 구조 강화", "지속 성장 보완"] },
+            second: { title: "ESTJ : 일정 총무 캠퍼 ⏱️", points: ["루틴 정돈", "실행 지속성 향상", "현실 부담 경감"] }
+        },
+        ENFJ: {
+            title: "<h2>당신은 ENFJ : 캠프 무드 프로듀서 🎬🤗</h2>",
+            summary: "사람과 분위기를 동시에 살리는 타입.",
+            interpretation: ["누가 지쳤는지 먼저 알아채고 케어합니다.", "팀 전체 만족도를 높이는 조율 능력이 뛰어납니다.", "관계와 실행의 균형 감각이 좋습니다."],
+            pros: ["관계 조율 능력", "동기 부여 강점", "팀 시너지 창출", "갈등 완화 능력"],
+            cons: ["과한 책임감", "자기 회복 지연", "거절 어려움"],
+            first: { title: "INTP : 장비 실험실 캠퍼 🛠️", points: ["분석 깊이 보완", "전략 완성도 향상", "객관성 강화"] },
+            second: { title: "ISTP : 현장 테크 캠퍼 🔧", points: ["실전 기술 보완", "문제 해결 속도 향상", "실행력 강화"] }
+        },
+        ENFP: {
+            title: "<h2>당신은 ENFP : 감성 불멍 메이커 🔥🌈</h2>",
+            summary: "캠핑장을 추억 제조기로 만드는 타입.",
+            interpretation: ["새로운 장소와 사람에서 에너지를 얻습니다.", "현장 텐션을 올리고 모두를 참여하게 만듭니다.", "재미와 의미를 동시에 찾아내는 능력이 좋습니다."],
+            pros: ["친화력 우수", "회복 탄력성 높음", "분위기 메이킹", "도전 의지 강함"],
+            cons: ["집중 분산 가능", "우선순위 자주 변경", "루틴 관리 약화"],
+            first: { title: "INTJ : 베이스캠프 전략가 🧭", points: ["구조화 보완", "우선순위 정리", "장기 실행 안정"] },
+            second: { title: "ISTJ : 체크리스트 장인 캠퍼 📋", points: ["디테일 누락 방지", "지속성 강화", "정리 피로 경감"] }
+        },
+        ISTJ: {
+            title: "<h2>당신은 ISTJ : 체크리스트 장인 캠퍼 📋🧰</h2>",
+            summary: "준비력으로 실패율을 줄이는 타입.",
+            interpretation: ["기본기와 반복 루틴으로 안정적인 캠핑을 만듭니다.", "장비/동선 관리가 명확해 사고 가능성이 낮습니다.", "꾸준함으로 팀 신뢰를 얻는 스타일입니다."],
+            pros: ["준비 철저", "실행 안정성", "책임감 강함", "재현 가능한 운영"],
+            cons: ["변화 대응 느림", "즉흥성 부족", "즐거움 표현이 적을 수 있음"],
+            first: { title: "ENTP : 번뜩임 실험가 캠퍼 ⚡", points: ["새 관점 제공", "유연성 강화", "재미 확장"] },
+            second: { title: "ENFP : 감성 불멍 메이커 🔥", points: ["현장 에너지 보완", "감정 환기", "관계 온도 상승"] }
+        },
+        ISFJ: {
+            title: "<h2>당신은 ISFJ : 안전 케어 코치 캠퍼 🛟💚</h2>",
+            summary: "모두가 편안한 캠핑을 설계하는 타입.",
+            interpretation: ["작은 불편도 먼저 발견해 조용히 해결합니다.", "팀원 컨디션과 안전을 자연스럽게 챙깁니다.", "안정적인 만족도를 만드는 숨은 핵심 인력입니다."],
+            pros: ["배려 깊음", "안전 감각 우수", "꾸준한 실행", "신뢰 형성 빠름"],
+            cons: ["자기 요구 후순위", "과한 책임감", "새 환경 긴장 가능"],
+            first: { title: "ESTP : 즉시출동 액션 캠퍼 🏃", points: ["현장 기동력 보완", "도전 반경 확장", "실행 속도 강화"] },
+            second: { title: "ENTP : 번뜩임 실험가 캠퍼 ⚡", points: ["고정 루틴 환기", "창의성 보강", "새 경험 유도"] }
+        },
+        ESTJ: {
+            title: "<h2>당신은 ESTJ : 일정 총무 캠퍼 ⏱️📦</h2>",
+            summary: "운영력으로 캠핑 품질을 끌어올리는 타입.",
+            interpretation: ["역할 분배와 시간 관리에 강합니다.", "현장 리소스를 효율적으로 배치해 결과를 만듭니다.", "행사형 캠핑에서 특히 존재감이 큽니다."],
+            pros: ["운영 능력 탁월", "완수율 높음", "리더십 명확", "현실 판단 빠름"],
+            cons: ["유연성 부족 가능", "속도 압박 유발 가능", "느린 호흡에 답답함"],
+            first: { title: "ISFP : 감각 데코레이터 캠퍼 🫧", points: ["여유 감각 보완", "현장 무드 강화", "긴장 완화"] },
+            second: { title: "INFP : 무드 기록가 캠퍼 🌌", points: ["감정 공감 확장", "의미 중심 시각 보완", "분위기 부드럽게 조정"] }
+        },
+        ESFJ: {
+            title: "<h2>당신은 ESFJ : 패밀리 매니저 캠퍼 🍲❤️</h2>",
+            summary: "팀의 만족도를 끝까지 챙기는 타입.",
+            interpretation: ["사람 중심으로 일정과 분위기를 조율합니다.", "모두가 불편하지 않게 디테일을 챙기는 능력이 좋습니다.", "관계의 온도를 안정적으로 유지합니다."],
+            pros: ["소통 능력 우수", "협업 적응력 높음", "현장 케어 능력", "팀워크 향상"],
+            cons: ["평가 민감 가능", "배려 과부하", "타인 기준 우선 가능"],
+            first: { title: "INTP : 장비 실험실 캠퍼 🛠️", points: ["분석 시각 보완", "효율 개선 포인트 강화", "객관성 향상"] },
+            second: { title: "INTJ : 베이스캠프 전략가 🧭", points: ["장기 구조 보완", "우선순위 선명화", "실행 체계 강화"] }
+        },
+        ISTP: {
+            title: "<h2>당신은 ISTP : 현장 테크 캠퍼 🔧🌲</h2>",
+            summary: "문제 생기면 가장 먼저 찾는 해결사.",
+            interpretation: ["현장 이슈를 빠르게 파악하고 손으로 해결합니다.", "실전에서 배우고 즉시 적용하는 능력이 뛰어납니다.", "말보다 결과로 신뢰를 얻는 타입입니다."],
+            pros: ["실전 대응 우수", "기술 습득 빠름", "침착한 판단", "문제 해결 효율"],
+            cons: ["감정 표현 적음", "장기 계획 미루기", "반복 루틴 지루함"],
+            first: { title: "ENFJ : 캠프 무드 프로듀서 🎬", points: ["소통 연결 보완", "팀 조화 강화", "정서 회복력 향상"] },
+            second: { title: "ESFJ : 패밀리 매니저 캠퍼 🍲", points: ["생활 리듬 안정", "협업 피로 완화", "지속성 강화"] }
+        },
+        ISFP: {
+            title: "<h2>당신은 ISFP : 감각 데코레이터 캠퍼 🫧🎨</h2>",
+            summary: "공간을 취향으로 완성하는 타입.",
+            interpretation: ["디테일한 감각으로 캠프 분위기를 바꿉니다.", "현재 순간 몰입도가 높아 만족 체감이 큽니다.", "강요 없는 자연스러운 리듬을 선호합니다."],
+            pros: ["감각 표현 우수", "유연한 대응", "공간 연출 능력", "현장 몰입도 높음"],
+            cons: ["체계 기록 부족 가능", "기분 영향 큼", "목표 설정 느슨 가능"],
+            first: { title: "ESTJ : 일정 총무 캠퍼 ⏱️", points: ["루틴 보완", "실행 구조 강화", "성장 추적 가능"] },
+            second: { title: "ENTJ : 원정대 총괄 디렉터 🚙", points: ["도전 범위 확장", "성과 지표 명확화", "추진력 강화"] }
+        },
+        ESTP: {
+            title: "<h2>당신은 ESTP : 즉시출동 액션 캠퍼 🏃🔥</h2>",
+            summary: "현장 변수에 강한 실전형.",
+            interpretation: ["돌발 상황에서 오히려 집중력이 올라갑니다.", "결정이 빠르고 실행이 즉각적입니다.", "캠핑의 재미와 스릴을 크게 끌어올립니다."],
+            pros: ["순발력 우수", "현장 적응력 높음", "에너지 전달력", "결단 속도 빠름"],
+            cons: ["계획 누락 가능", "리스크 과소평가", "반복 루틴 회피 가능"],
+            first: { title: "ISFJ : 안전 케어 코치 캠퍼 🛟", points: ["안전 밸런스 보완", "페이스 안정", "지속 성장 기반"] },
+            second: { title: "INFJ : 별빛 큐레이터 캠퍼 🌙", points: ["깊이 있는 복기", "감정 소진 완화", "경험 의미 확장"] }
+        },
+        ESFP: {
+            title: "<h2>당신은 ESFP : 캠핑장 분위기 치어리더 🎉🌞</h2>",
+            summary: "어색한 공기도 순식간에 녹이는 타입.",
+            interpretation: ["사람과 현장을 즐겁게 연결하는 재능이 있습니다.", "즉흥적인 센스로 분위기를 살리는 데 강합니다.", "즐기는 힘이 커서 회복 탄력성도 좋습니다."],
+            pros: ["친화력 뛰어남", "현장 에너지 높음", "적응력 우수", "스트레스 회복 빠름"],
+            cons: ["장기 계획 약화 가능", "집중 분산 가능", "흥미 중심 선택 증가"],
+            first: { title: "INTJ : 베이스캠프 전략가 🧭", points: ["계획 구조 보완", "우선순위 강화", "성과 추적 습관화"] },
+            second: { title: "ISTJ : 체크리스트 장인 캠퍼 📋", points: ["루틴 안정화", "기본기 누적", "실수 반복 감소"] }
+        }
+    };
+
+    MBTI_RESULT_TYPES.forEach((mbti) => {
+        const item = templates[mbti];
+        if (!item) {
+            return;
+        }
+        settings[mbti].title = item.title;
+        settings[mbti].content = buildContent(
+            item.summary,
+            item.interpretation,
+            item.pros,
+            item.cons,
+            item.first,
+            item.second
+        );
+    });
+
+    return settings;
+}
+
+function removeH2BlocksFromHtml(raw) {
+    return String(raw || "")
+        .replace(/<h2\b[^>]*>[\s\S]*?<\/h2>\s*/gi, "")
+        .trim();
+}
+
+function sanitizeResultSettingsWithoutH2(rawSettings) {
+    const normalized = normalizeResultSettings(rawSettings);
+    let changed = false;
+
+    MBTI_RESULT_TYPES.forEach((mbti) => {
+        const current = String(normalized[mbti].content || "");
+        const sanitized = removeH2BlocksFromHtml(current);
+        if (current !== sanitized) {
+            normalized[mbti].content = sanitized;
+            changed = true;
+        }
+    });
+
+    return { changed, resultSettings: normalized };
+}
+
+async function ensureRunningAndSurfingResultContentCleanup() {
+    if (!isDbReady) {
+        return;
+    }
+
+    const seen = new Set();
+    const targets = [
+        { field: "seedKey", value: SURFING_TEST_SEED_KEY },
+        { field: "title", value: "서핑 MBTI 테스트" },
+        { field: "cardTitle", value: "서핑 MBTI 테스트" },
+        { field: "title", value: "러닝 MBTI 테스트" },
+        { field: "cardTitle", value: "러닝 MBTI 테스트" }
+    ];
+
+    for (const target of targets) {
+        try {
+            const snapshot = await db.collection("tests").where(target.field, "==", target.value).get();
+            for (const doc of snapshot.docs) {
+                if (seen.has(doc.id)) {
+                    continue;
+                }
+                seen.add(doc.id);
+
+                const data = doc.data() || {};
+                const sanitized = sanitizeResultSettingsWithoutH2(data.resultSettings);
+                if (!sanitized.changed) {
+                    continue;
+                }
+
+                const mbtiDescriptions = MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+                    const content = String(sanitized.resultSettings[mbti] && sanitized.resultSettings[mbti].content || "").trim();
+                    if (content) {
+                        acc[mbti] = content;
+                    }
+                    return acc;
+                }, {});
+
+                await db.collection("tests").doc(doc.id).update({
+                    resultSettings: sanitized.resultSettings,
+                    mbtiDescriptions,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedById: getCurrentAdminId()
+                });
+            }
+        } catch (error) {
+            console.error("결과 화면 내용 h2 정리 실패:", target, error);
+        }
+    }
 }
 
 async function ensureDefaultMbtiTest() {
@@ -1780,6 +2194,52 @@ async function ensureSurfingMbtiTest() {
         });
     } catch (error) {
         console.error("서핑 MBTI 테스트 자동 등록 실패:", error);
+    }
+}
+
+async function ensureCampingMbtiTest() {
+    if (!isAuthReady) {
+        return;
+    }
+
+    const seedQuestions = getCampingSeedQuestions();
+    if (seedQuestions.length !== 15) {
+        return;
+    }
+
+    try {
+        const existing = await db.collection("tests").where("seedKey", "==", CAMPING_TEST_SEED_KEY).limit(1).get();
+        if (!existing.empty) {
+            return;
+        }
+
+        const seedResultSettings = createCampingSeedResultSettings();
+        const mbtiDescriptions = MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+            const content = String(seedResultSettings[mbti] && seedResultSettings[mbti].content || "").trim();
+            if (content) {
+                acc[mbti] = content;
+            }
+            return acc;
+        }, {});
+
+        await db.collection("tests").add({
+            seedKey: CAMPING_TEST_SEED_KEY,
+            title: "캠핑 MBTI 테스트",
+            cardTitle: "캠핑 MBTI 테스트",
+            navTitle: "나는 어떤 캠퍼일까?",
+            isRecommended: true,
+            viewCount: 0,
+            thumbnail: "",
+            resultSettings: seedResultSettings,
+            questions: seedQuestions,
+            mbtiDescriptions,
+            isPublished: true,
+            createdById: ADMIN_ID,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        console.error("캠핑 MBTI 테스트 자동 등록 실패:", error);
     }
 }
 
@@ -1988,7 +2448,9 @@ if (resultContentInputEl) {
         if (authorized) {
             setLoginError("");
             await ensureDefaultMbtiTest();
+            await ensureRunningAndSurfingResultContentCleanup();
             await ensureSurfingMbtiTest();
+            await ensureCampingMbtiTest();
             state.currentPage = 1;
             await loadTestList();
             return;
