@@ -6,6 +6,7 @@ const MBTI_TYPES = ["", "E", "I", "N", "S", "T", "F", "J", "P"];
 const MBTI_RESULT_TYPES = ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP", "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"];
 const PAGE_SIZE = 15;
 const DEFAULT_TEST_SEED_KEY = "default-mbti-personality-v1";
+const SURFING_TEST_SEED_KEY = "surfing-mbti-youth-v1";
 const EXCEL_CELL_TEXT_LIMIT = 32767;
 
 const loginPanelEl = document.getElementById("admin-login-panel");
@@ -1327,6 +1328,369 @@ function getSeedQuestions() {
         .filter(Boolean);
 }
 
+function getSurfingSeedQuestions() {
+    return [
+        {
+            question: "파도 미쳤다는 소식 뜨면 네 반응은?",
+            answers: [
+                { text: "단톡에 \"오늘 출동 가능?\" 바로 쏜다.", scores: { E: 2 } },
+                { text: "친한 1~2명에게만 슬쩍 공유한다.", scores: { E: 1, I: 1 } },
+                { text: "알림 끄고 혼자 조용히 바다로 간다.", scores: { I: 2 } },
+                { text: "아무 말 없이 내 루틴부터 체크한다.", scores: { I: 2 } }
+            ]
+        },
+        {
+            question: "오늘 입수 여부를 정하는 기준은?",
+            answers: [
+                { text: "스웰/풍속/조위 수치부터 본다.", scores: { S: 2 } },
+                { text: "수치 확인 후 현장 느낌으로 결정한다.", scores: { S: 1, N: 1 } },
+                { text: "파도 결이랑 하늘 톤 보고 감 잡는다.", scores: { N: 2 } },
+                { text: "\"오늘 뭔가 될 날\" 직감이 온다.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "라이딩 영상 다시 볼 때 너는?",
+            answers: [
+                { text: "프레임 단위로 자세/타이밍 분석한다.", scores: { T: 2 } },
+                { text: "영상 분위기랑 표정부터 본다.", scores: { F: 2 } },
+                { text: "기술 포인트랑 멘탈 상태 둘 다 본다.", scores: { T: 1, F: 1 } },
+                { text: "\"오늘 즐거웠나\" 감정부터 체크한다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "서핑 전 준비 스타일은?",
+            answers: [
+                { text: "전날 체크리스트 완료하고 잔다.", scores: { J: 2 } },
+                { text: "큰 계획만 세우고 현장 조정한다.", scores: { J: 1, P: 1 } },
+                { text: "아침 기분 보고 포인트 정한다.", scores: { P: 2 } },
+                { text: "바다 보이면 그냥 바로 입수한다.", scores: { P: 2 } }
+            ]
+        },
+        {
+            question: "서핑샵 첫 방문, 낯선 사람들 가득하면?",
+            answers: [
+                { text: "초면이어도 먼저 말 건다.", scores: { E: 2 } },
+                { text: "분위기 보다가 몇 명과만 대화한다.", scores: { E: 1, I: 1 } },
+                { text: "가볍게 인사만 하고 준비한다.", scores: { I: 2 } },
+                { text: "조용히 장비 확인부터 한다.", scores: { I: 2 } }
+            ]
+        },
+        {
+            question: "새 기술 배울 때 제일 신나는 방식은?",
+            answers: [
+                { text: "기본 동작을 정확히 반복 연습한다.", scores: { S: 2 } },
+                { text: "기본기 익힌 뒤 살짝 응용해본다.", scores: { S: 1, N: 1 } },
+                { text: "\"이 동작 이렇게 바꾸면?\" 실험한다.", scores: { N: 2 } },
+                { text: "영상 보며 나만의 라인을 상상한다.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "친구가 연속 와이프아웃으로 멘붕 왔다면?",
+            answers: [
+                { text: "원인부터 짚고 수정 포인트를 준다.", scores: { T: 2 } },
+                { text: "괜찮다고 공감해주며 마음부터 잡아준다.", scores: { F: 2 } },
+                { text: "피드백 주면서 동시에 응원도 한다.", scores: { T: 1, F: 1 } },
+                { text: "일단 쉬자고 하고 텐션 회복시킨다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "한 달 서핑 루틴은 보통?",
+            answers: [
+                { text: "주 n회 고정 루틴으로 간다.", scores: { J: 2 } },
+                { text: "주간 목표만 정하고 유동적으로 탄다.", scores: { J: 1, P: 1 } },
+                { text: "날씨 좋을 때 몰아서 탄다.", scores: { P: 2 } },
+                { text: "계획표는 있는데 거의 즉흥이다.", scores: { P: 2 } }
+            ]
+        },
+        {
+            question: "오늘 라이딩 올릴 때 SNS 스타일은?",
+            answers: [
+                { text: "릴스 편집해서 다같이 태그한다.", scores: { E: 2 } },
+                { text: "하이라이트만 친한 사람에게 공유한다.", scores: { E: 1, I: 1 } },
+                { text: "기록은 남기되 공개는 안 한다.", scores: { I: 2 } },
+                { text: "애초에 폰을 안 꺼낸다.", scores: { I: 2 } }
+            ]
+        },
+        {
+            question: "새 보드 고를 때 제일 먼저 보는 건?",
+            answers: [
+                { text: "스펙표와 실제 리뷰 데이터.", scores: { S: 2 } },
+                { text: "스펙도 보고 디자인도 본다.", scores: { S: 1, N: 1 } },
+                { text: "브랜드 스토리와 감성 무드.", scores: { N: 2 } },
+                { text: "\"이건 내 보드다\" 느낌.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "팀 약속 시간에 지각 이슈가 생기면?",
+            answers: [
+                { text: "규칙을 먼저 재정리한다.", scores: { T: 2 } },
+                { text: "사정을 듣고 감정을 먼저 살핀다.", scores: { F: 2 } },
+                { text: "원칙 설명 + 배려를 같이 챙긴다.", scores: { T: 1, F: 1 } },
+                { text: "오늘은 웃고 넘기자고 한다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "서핑 여행 가면 네 일정표는?",
+            answers: [
+                { text: "시간대별 입수 계획까지 다 짠다.", scores: { J: 2 } },
+                { text: "핵심 스팟만 정하고 유연하게 움직인다.", scores: { J: 1, P: 1 } },
+                { text: "현지 컨디션 보고 즉흥 선택한다.", scores: { P: 2 } },
+                { text: "길 가다 끌리는 해변에서 바로 탄다.", scores: { P: 2 } }
+            ]
+        },
+        {
+            question: "오늘 파도 피드백을 남긴다면?",
+            answers: [
+                { text: "수치와 체감을 구분해서 기록한다.", scores: { S: 2 } },
+                { text: "수치 + 인사이트를 함께 메모한다.", scores: { S: 1, N: 1 } },
+                { text: "느낌/장면 중심으로 감성 기록한다.", scores: { N: 2 } },
+                { text: "이 경험이 미래에 줄 변화부터 쓴다.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "대회 참가를 고민할 때 너의 기준은?",
+            answers: [
+                { text: "성장 효율과 기록 개선 가능성.", scores: { T: 2 } },
+                { text: "함께 도전할 사람과 분위기.", scores: { F: 2 } },
+                { text: "성과도 관계도 둘 다 중요하다.", scores: { T: 1, F: 1 } },
+                { text: "일단 재밌어 보이면 도전한다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "일출 서핑 제안이 새벽에 오면?",
+            answers: [
+                { text: "모닝콜 돌리고 멤버들 소집한다.", scores: { E: 2 } },
+                { text: "딱 1~2명에게만 연락한다.", scores: { E: 1, I: 1 } },
+                { text: "조용히 준비해서 혼자 출발한다.", scores: { I: 2 } },
+                { text: "말 없이 파도 소리 들으러 간다.", scores: { I: 2 } }
+            ]
+        }
+    ];
+}
+
+function createSurfingSeedResultSettings() {
+    const settings = createEmptyResultSettings();
+
+    function buildContent(title, summary, interpretation, pros, cons, matchFirst, matchSecond) {
+        const interpretationHtml = interpretation.map((line) => `<p>${line}</p>`).join("\n");
+        const prosHtml = pros.map((item) => `<li>${item}</li>`).join("");
+        const consHtml = cons.map((item) => `<li>${item}</li>`).join("");
+
+        return `${title}
+
+<h3>한 줄 요약</h3>
+<p>${summary}</p>
+
+<h4>유형 해석</h4>
+${interpretationHtml}
+
+<h4>장점</h4>
+<ul>
+${prosHtml}
+</ul>
+
+<h4>단점</h4>
+<ul>
+${consHtml}
+</ul>
+
+<h4>나와 잘 맞는 유형</h4>
+<p><strong>1위 : ${matchFirst.title}</strong><br>
+- ${matchFirst.points[0]}<br>
+- ${matchFirst.points[1]}<br>
+- ${matchFirst.points[2]}
+</p>
+
+<p><strong>2위 : ${matchSecond.title}</strong><br>
+- ${matchSecond.points[0]}<br>
+- ${matchSecond.points[1]}<br>
+- ${matchSecond.points[2]}
+</p>`;
+    }
+
+    const templates = {
+        INTJ: {
+            title: "<h2>당신은 INTJ : 전략 라인 설계 서퍼 📊🧠</h2>",
+            summary: "파도도 계획대로 태우는 설계형.",
+            interpretation: ["입수 전 이미 머릿속에서 시뮬레이션이 끝납니다.", "컨디션, 조류, 라인까지 체계적으로 계산합니다.", "예측이 맞아떨어질 때 가장 큰 쾌감을 느낍니다."],
+            pros: ["장기 성장 플랜이 탄탄함", "문제 원인 분석이 빠름", "훈련 효율이 높음", "자기 통제가 강함"],
+            cons: ["즉흥 상황에 경직될 수 있음", "재미보다 성과에 치우침", "완벽주의로 피로 누적"],
+            match: "서핑 메이트",
+            first: { title: "ENFP : 바이브 폭발 서퍼 🌈", points: ["재미 지수를 올려줌", "고정 사고를 깨줌", "감정 밸런스를 맞춰줌"] },
+            second: { title: "ESFP : 비치 페스티벌러 서퍼 🎉", points: ["현장 텐션 상승", "실전 적응력 보완", "휴식도 즐기게 만듦"] }
+        },
+        INTP: {
+            title: "<h2>당신은 INTP : 파도 연구소 서퍼 🧪🌊</h2>",
+            summary: "서핑도 결국 끝없는 실험.",
+            interpretation: ["한 번 탄 파도를 그냥 넘기지 않고 패턴을 분석합니다.", "기술 디테일을 파고들수록 더 재미를 느낍니다.", "혼자 몰입할 때 실력이 급상승하는 타입입니다."],
+            pros: ["원리 이해가 깊음", "새 기술 학습 속도가 빠름", "문제 해결 아이디어가 많음", "객관적 자기 피드백 가능"],
+            cons: ["생각이 과해 실행이 늦어질 수 있음", "루틴 유지력이 떨어질 수 있음", "감정 표현이 적어 오해받기 쉬움"],
+            match: "서핑 메이트",
+            first: { title: "ENFJ : 크루 부스터 서퍼 🤝", points: ["실행 동력을 끌어줌", "소통을 부드럽게 만듦", "현장 연결감을 강화"] },
+            second: { title: "ESFJ : 선셋 케어메이트 서퍼 🌅", points: ["생활 리듬 관리 보완", "팀 적응을 도와줌", "지속 루틴을 잡아줌"] }
+        },
+        ENTJ: {
+            title: "<h2>당신은 ENTJ : 스웰 프로젝트 리더 서퍼 🚀📈</h2>",
+            summary: "파도 위에서도 목표 달성형.",
+            interpretation: ["목표를 수치로 설정하고 실행 속도를 높입니다.", "팀에서도 자연스럽게 방향을 정리하는 리더입니다.", "결과를 만드는 구조를 만드는 데 강합니다."],
+            pros: ["결단력과 추진력이 강함", "계획 수립 능력이 뛰어남", "성과 중심 실행이 빠름", "팀 운영 감각이 좋음"],
+            cons: ["속도 차이로 주변을 압박할 수 있음", "실패 허용 범위가 좁을 수 있음", "휴식보다 성과를 우선함"],
+            match: "서핑 메이트",
+            first: { title: "INFP : 무드 파도 시인 서퍼 🎧", points: ["감정적 완충 작용", "과열된 목표를 조절", "즐거움의 의미를 상기"] },
+            second: { title: "ISFP : 감성 글라이더 서퍼 🫧", points: ["현재 감각을 확장", "유연성을 더해줌", "강한 텐션을 부드럽게 완화"] }
+        },
+        ENTP: {
+            title: "<h2>당신은 ENTP : 트릭 실험실 서퍼 ⚡🌀</h2>",
+            summary: "새로운 라인을 찾아 계속 변주.",
+            interpretation: ["익숙한 방식보다 새로운 시도를 더 즐깁니다.", "현장에서 아이디어가 즉석으로 쏟아집니다.", "틀을 깨는 플레이에서 존재감이 크게 드러납니다."],
+            pros: ["창의적 문제 해결이 뛰어남", "적응력과 순발력이 좋음", "도전 의지가 강함", "분위기를 빠르게 끌어올림"],
+            cons: ["지속 루틴이 약해질 수 있음", "마무리 집중력이 떨어질 수 있음", "리스크 관리가 느슨할 수 있음"],
+            match: "서핑 메이트",
+            first: { title: "ISTJ : 루틴 마스터 서퍼 🗂️", points: ["실행 구조를 잡아줌", "과감함에 안정성을 추가", "완성도를 높여줌"] },
+            second: { title: "ISFJ : 세이프 가디언 서퍼 🛟", points: ["안전 감각을 보완", "지속 페이스를 유지", "실전 실수를 줄여줌"] }
+        },
+        INFJ: {
+            title: "<h2>당신은 INFJ : 감각 큐레이터 서퍼 🌙🔮</h2>",
+            summary: "파도와 마음의 결을 함께 읽는 타입.",
+            interpretation: ["서핑을 단순한 스포츠보다 의미 있는 경험으로 받아들입니다.", "상대의 분위기와 현장 흐름을 섬세하게 감지합니다.", "깊이 있는 몰입으로 안정적인 성장 곡선을 만듭니다."],
+            pros: ["통찰력과 공감 능력이 높음", "집중 몰입이 깊음", "섬세한 피드백이 가능", "장기적 비전을 잘 봄"],
+            cons: ["감정 소모가 누적되기 쉬움", "완벽한 타이밍을 기다리다 기회를 놓칠 수 있음", "혼자 감당하려는 경향"],
+            match: "서핑 메이트",
+            first: { title: "ENTP : 트릭 실험실 서퍼 ⚡", points: ["새로운 시도를 자극", "과한 고민을 행동으로 전환", "유쾌한 에너지를 공급"] },
+            second: { title: "ESTP : 파도 액션 스타터 서퍼 🏄", points: ["즉시 실행력을 보완", "현장 대처 속도 향상", "과몰입을 가볍게 풀어줌"] }
+        },
+        INFP: {
+            title: "<h2>당신은 INFP : 무드 파도 시인 서퍼 🎧🌊</h2>",
+            summary: "파도를 타며 마음의 문장을 쓰는 타입.",
+            interpretation: ["그날의 감정과 파도 결을 연결해 기억합니다.", "의미가 느껴지는 순간에 폭발적인 몰입을 합니다.", "자기만의 스타일이 분명한 창작형 서퍼입니다."],
+            pros: ["감수성이 풍부함", "자기 동기 부여가 깊음", "개성 있는 스타일 구축", "타인의 감정을 잘 이해함"],
+            cons: ["기분 영향으로 기복이 생길 수 있음", "현실 루틴 관리가 약할 수 있음", "비교에 민감해질 수 있음"],
+            match: "서핑 메이트",
+            first: { title: "ENTJ : 스웰 프로젝트 리더 서퍼 📈", points: ["목표 설정을 명확히 도움", "실행력을 안정화", "성장 지표를 만들어줌"] },
+            second: { title: "ESTJ : 타임어택 매니저 서퍼 ⏱️", points: ["생활 루틴을 잡아줌", "훈련 지속성을 강화", "현실 관리 부담을 줄임"] }
+        },
+        ENFJ: {
+            title: "<h2>당신은 ENFJ : 크루 부스터 서퍼 🤝🌟</h2>",
+            summary: "팀 분위기와 성장 둘 다 챙기는 타입.",
+            interpretation: ["함께 타는 사람들의 에너지를 빠르게 끌어올립니다.", "누가 지쳤는지 먼저 알아채고 동기를 살려줍니다.", "관계와 성장을 동시에 끌고 가는 조율 능력이 강합니다."],
+            pros: ["리더십과 공감이 균형적", "팀 시너지를 잘 만듦", "동기 부여 능력이 좋음", "갈등 중재에 강함"],
+            cons: ["타인 감정에 과몰입할 수 있음", "자기 회복 시간을 놓치기 쉬움", "거절이 어려워 과부하 위험"],
+            match: "서핑 메이트",
+            first: { title: "INTP : 파도 연구소 서퍼 🧪", points: ["분석 깊이를 더해줌", "감정-논리 균형 강화", "장기 전략을 정교화"] },
+            second: { title: "ISTP : 실전 테크니션 서퍼 🔧", points: ["현장 기술 보완", "간결한 피드백 제공", "실전 실행력을 높임"] }
+        },
+        ENFP: {
+            title: "<h2>당신은 ENFP : 바이브 폭발 서퍼 🌈🔥</h2>",
+            summary: "파도도 사람도 신나게 만드는 에너자이저.",
+            interpretation: ["새로운 스팟과 경험에서 에너지를 얻습니다.", "감정 표현이 풍부해 주변 텐션을 끌어올립니다.", "재미와 성장의 연결점을 빠르게 찾아냅니다."],
+            pros: ["적응력과 친화력이 높음", "창의적 분위기 메이커", "도전 의지가 강함", "회복 탄력성이 좋음"],
+            cons: ["루틴이 흐트러질 수 있음", "우선순위가 자주 바뀔 수 있음", "집중력이 분산되기 쉬움"],
+            match: "서핑 메이트",
+            first: { title: "INTJ : 전략 라인 설계 서퍼 📊", points: ["아이디어를 구조화", "실행 우선순위 정리", "성장 속도를 안정화"] },
+            second: { title: "ISTJ : 루틴 마스터 서퍼 🗂️", points: ["일상 루틴 보완", "마감 관리 강화", "장기 지속력을 확보"] }
+        },
+        ISTJ: {
+            title: "<h2>당신은 ISTJ : 루틴 마스터 서퍼 🗂️🌊</h2>",
+            summary: "꾸준함으로 실력을 증명하는 타입.",
+            interpretation: ["기본기와 반복 훈련을 가장 신뢰합니다.", "작은 개선을 쌓아 확실한 변화를 만듭니다.", "안전과 효율을 동시에 챙기는 현실형 서퍼입니다."],
+            pros: ["성실하고 안정적인 루틴", "디테일 관리 능력이 뛰어남", "재현 가능한 퍼포먼스", "책임감이 강함"],
+            cons: ["변화 대응이 느릴 수 있음", "새 시도를 주저할 수 있음", "유연성이 부족해 보일 수 있음"],
+            match: "서핑 메이트",
+            first: { title: "ENTP : 트릭 실험실 서퍼 ⚡", points: ["새로운 관점을 제공", "변화 적응력을 높임", "즐거운 도전을 유도"] },
+            second: { title: "ENFP : 바이브 폭발 서퍼 🌈", points: ["현장 에너지를 보완", "과한 긴장을 완화", "다양한 경험 폭을 확장"] }
+        },
+        ISFJ: {
+            title: "<h2>당신은 ISFJ : 세이프 가디언 서퍼 🛟💙</h2>",
+            summary: "안전과 배려로 팀을 지키는 타입.",
+            interpretation: ["현장 리스크를 먼저 읽고 모두를 챙깁니다.", "작은 변화도 놓치지 않는 세심함이 강점입니다.", "안정적인 분위기 속에서 실력이 꾸준히 오릅니다."],
+            pros: ["안전 감각이 뛰어남", "팀 케어 능력이 우수함", "꾸준한 실행력이 높음", "신뢰를 잘 쌓음"],
+            cons: ["자기 욕구를 뒤로 미룰 수 있음", "새 환경에서 긴장할 수 있음", "과한 책임감으로 피로 누적"],
+            match: "서핑 메이트",
+            first: { title: "ESTP : 파도 액션 스타터 서퍼 🏄", points: ["실전 자신감을 높임", "즉흥 대응력을 강화", "도전 반경을 넓혀줌"] },
+            second: { title: "ENTP : 트릭 실험실 서퍼 🌀", points: ["고정 루틴에 신선함 추가", "아이디어 폭 확장", "새로운 재미를 제공"] }
+        },
+        ESTJ: {
+            title: "<h2>당신은 ESTJ : 타임어택 매니저 서퍼 ⏱️📋</h2>",
+            summary: "관리력으로 성장을 가속하는 타입.",
+            interpretation: ["목표, 일정, 실행을 빠르게 구조화합니다.", "실행 체크가 분명해 팀 전체 효율도 올라갑니다.", "결과를 만드는 운영형 서퍼의 강점을 보입니다."],
+            pros: ["운영/관리 능력이 탁월함", "실행 속도와 완수율이 높음", "책임감 있는 리딩", "현실적인 판단이 빠름"],
+            cons: ["완급 조절이 어려울 수 있음", "느린 페이스를 답답해할 수 있음", "유연한 실험을 놓치기 쉬움"],
+            match: "서핑 메이트",
+            first: { title: "ISFP : 감성 글라이더 서퍼 🫧", points: ["여유와 감각을 더해줌", "강한 통제를 완화", "현재 순간 몰입을 강화"] },
+            second: { title: "INFP : 무드 파도 시인 서퍼 🎧", points: ["감정적 공감 폭 확장", "목표의 의미를 보완", "팀 분위기를 부드럽게 조정"] }
+        },
+        ESFJ: {
+            title: "<h2>당신은 ESFJ : 선셋 케어메이트 서퍼 🌅🤗</h2>",
+            summary: "모두가 즐거운 세션을 만드는 타입.",
+            interpretation: ["함께의 온도를 중요하게 생각하는 팀 플레이어입니다.", "현장 분위기를 세심하게 조율해 안정감을 만듭니다.", "관계 중심이지만 실행력도 꾸준히 유지합니다."],
+            pros: ["팀워크 형성 능력이 뛰어남", "소통이 부드럽고 빠름", "배려와 실행을 함께 챙김", "현장 분위기 관리에 강함"],
+            cons: ["평가에 민감해질 수 있음", "과한 배려로 에너지 소모", "우선순위를 타인에게 맞출 수 있음"],
+            match: "서핑 메이트",
+            first: { title: "INTP : 파도 연구소 서퍼 🧪", points: ["분석 기반 시각을 보완", "의사결정 객관성 강화", "기술 개선 포인트를 명확화"] },
+            second: { title: "INTJ : 전략 라인 설계 서퍼 📊", points: ["장기 전략을 정돈", "우선순위 설정을 지원", "실행 체계를 탄탄하게 보강"] }
+        },
+        ISTP: {
+            title: "<h2>당신은 ISTP : 실전 테크니션 서퍼 🔧🌊</h2>",
+            summary: "말보다 기술로 증명하는 타입.",
+            interpretation: ["현장에서 몸으로 배우고 바로 적용합니다.", "위기 상황에서도 침착하게 대응합니다.", "간결하고 정확한 피드백으로 실력을 끌어올립니다."],
+            pros: ["실전 대처 능력이 뛰어남", "기술 습득이 빠름", "문제 해결이 현실적", "침착함이 강점"],
+            cons: ["감정 표현이 적어 거리감이 생길 수 있음", "장기 계획을 미루기 쉬움", "반복 루틴을 지루해할 수 있음"],
+            match: "서핑 메이트",
+            first: { title: "ENFJ : 크루 부스터 서퍼 🤝", points: ["소통 연결을 강화", "팀 호흡을 부드럽게 조정", "정서적 회복력을 보완"] },
+            second: { title: "ESFJ : 선셋 케어메이트 서퍼 🌅", points: ["생활 리듬을 안정화", "협업 스트레스를 완화", "지속 가능한 페이스 구축"] }
+        },
+        ISFP: {
+            title: "<h2>당신은 ISFP : 감성 글라이더 서퍼 🫧🎨</h2>",
+            summary: "느낌 좋은 라인을 예술처럼 타는 타입.",
+            interpretation: ["현재 순간의 감각을 섬세하게 읽어냅니다.", "스타일과 무드가 분명해 개성이 강하게 드러납니다.", "무리하지 않는 자연스러운 성장이 특징입니다."],
+            pros: ["감각적 표현이 뛰어남", "현장 몰입도가 높음", "유연한 대응이 가능", "개성 있는 스타일 구축"],
+            cons: ["체계적 기록이 부족할 수 있음", "컨디션에 영향을 크게 받을 수 있음", "목표 설정이 느슨해질 수 있음"],
+            match: "서핑 메이트",
+            first: { title: "ESTJ : 타임어택 매니저 서퍼 ⏱️", points: ["루틴과 목표를 보완", "실행 일정을 구체화", "성장 추적을 도와줌"] },
+            second: { title: "ENTJ : 스웰 프로젝트 리더 서퍼 🚀", points: ["도전 범위를 확장", "성과 지표를 선명화", "실행 추진력을 강화"] }
+        },
+        ESTP: {
+            title: "<h2>당신은 ESTP : 파도 액션 스타터 서퍼 🏄🔥</h2>",
+            summary: "현장에서 바로 터지는 실전형.",
+            interpretation: ["상황 판단이 빠르고 행동 전환이 즉각적입니다.", "변수 많은 세션에서 오히려 강해지는 타입입니다.", "도전적이고 과감한 플레이로 흐름을 이끕니다."],
+            pros: ["순발력과 담력이 좋음", "실전 적응력이 매우 높음", "현장 분위기를 살림", "결정이 빠름"],
+            cons: ["리스크를 과소평가할 수 있음", "세밀한 계획이 부족할 수 있음", "반복 훈련을 건너뛸 수 있음"],
+            match: "서핑 메이트",
+            first: { title: "ISFJ : 세이프 가디언 서퍼 🛟", points: ["안전 밸런스를 보완", "페이스 조절을 지원", "안정적 성장 기반 제공"] },
+            second: { title: "INFJ : 감각 큐레이터 서퍼 🔮", points: ["깊이 있는 복기를 도와줌", "감정 소진을 조절", "플레이 의미를 확장"] }
+        },
+        ESFP: {
+            title: "<h2>당신은 ESFP : 비치 페스티벌러 서퍼 🎉🌞</h2>",
+            summary: "바다를 축제로 만드는 분위기 메이커.",
+            interpretation: ["사람과 파도, 음악이 만나면 에너지가 최고조가 됩니다.", "즉흥적인 센스로 현장 분위기를 끌어올립니다.", "즐기는 힘이 강해서 회복 탄력성이 높습니다."],
+            pros: ["친화력과 현장 에너지가 높음", "적응이 빠르고 유연함", "팀 사기를 끌어올림", "스트레스 회복이 빠름"],
+            cons: ["장기 계획이 약해질 수 있음", "집중 유지가 흔들릴 수 있음", "흥미 중심 선택이 늘어날 수 있음"],
+            match: "서핑 메이트",
+            first: { title: "INTJ : 전략 라인 설계 서퍼 📊", points: ["계획적 성장 구조 보완", "우선순위 설정 지원", "성과 추적 습관 형성"] },
+            second: { title: "ISTJ : 루틴 마스터 서퍼 🗂️", points: ["지속 루틴을 안정화", "기본기 누적을 강화", "실수 반복을 줄여줌"] }
+        }
+    };
+
+    MBTI_RESULT_TYPES.forEach((mbti) => {
+        const item = templates[mbti];
+        if (!item) {
+            return;
+        }
+        settings[mbti].title = item.title;
+        settings[mbti].content = buildContent(
+            item.title,
+            item.summary,
+            item.interpretation,
+            item.pros,
+            item.cons,
+            item.first,
+            item.second
+        );
+    });
+
+    return settings;
+}
+
 async function ensureDefaultMbtiTest() {
     if (!isAuthReady) {
         return;
@@ -1370,6 +1734,52 @@ async function ensureDefaultMbtiTest() {
         });
     } catch (error) {
         console.error("기본 MBTI 테스트 자동 등록 실패:", error);
+    }
+}
+
+async function ensureSurfingMbtiTest() {
+    if (!isAuthReady) {
+        return;
+    }
+
+    const seedQuestions = getSurfingSeedQuestions();
+    if (seedQuestions.length !== 15) {
+        return;
+    }
+
+    try {
+        const existing = await db.collection("tests").where("seedKey", "==", SURFING_TEST_SEED_KEY).limit(1).get();
+        if (!existing.empty) {
+            return;
+        }
+
+        const seedResultSettings = createSurfingSeedResultSettings();
+        const mbtiDescriptions = MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+            const content = String(seedResultSettings[mbti] && seedResultSettings[mbti].content || "").trim();
+            if (content) {
+                acc[mbti] = content;
+            }
+            return acc;
+        }, {});
+
+        await db.collection("tests").add({
+            seedKey: SURFING_TEST_SEED_KEY,
+            title: "서핑 MBTI 테스트",
+            cardTitle: "서핑 MBTI 테스트",
+            navTitle: "나는 어떤 서퍼일까?",
+            isRecommended: true,
+            viewCount: 0,
+            thumbnail: "",
+            resultSettings: seedResultSettings,
+            questions: seedQuestions,
+            mbtiDescriptions,
+            isPublished: true,
+            createdById: ADMIN_ID,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        console.error("서핑 MBTI 테스트 자동 등록 실패:", error);
     }
 }
 
@@ -1578,6 +1988,7 @@ if (resultContentInputEl) {
         if (authorized) {
             setLoginError("");
             await ensureDefaultMbtiTest();
+            await ensureSurfingMbtiTest();
             state.currentPage = 1;
             await loadTestList();
             return;
