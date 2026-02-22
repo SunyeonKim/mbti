@@ -9,6 +9,13 @@ const DEFAULT_TEST_SEED_KEY = "default-mbti-personality-v1";
 const SURFING_TEST_SEED_KEY = "surfing-mbti-youth-v1";
 const CAMPING_TEST_SEED_KEY = "camping-mbti-3040-v1";
 const MOTORBIKE_TEST_SEED_KEY = "motorbike-mbti-30s-v1";
+const LOVE_STYLE_TEST_SEED_KEY = "love-style-mbti-v1";
+const CONSUMPTION_STYLE_TEST_SEED_KEY = "consumption-style-mbti-v1";
+const RELATIONSHIP_STYLE_TEST_SEED_KEY = "relationship-style-mbti-v1";
+const TRAVEL_STYLE_TEST_SEED_KEY = "travel-style-mbti-v1";
+const OFFICE_CHARACTER_TEST_SEED_KEY = "office-character-mbti-v1";
+const STRESS_RELIEF_TEST_SEED_KEY = "stress-relief-mbti-v1";
+const FANDOM_STYLE_TEST_SEED_KEY = "fandom-style-mbti-v1";
 const EXCEL_CELL_TEXT_LIMIT = 32767;
 
 const loginPanelEl = document.getElementById("admin-login-panel");
@@ -2256,6 +2263,353 @@ ${consHtml}
     return settings;
 }
 
+function createAxisQuestion(question, answers, primary, secondary) {
+    return {
+        question,
+        answers: [
+            { text: answers[0], scores: { [primary]: 2 } },
+            { text: answers[1], scores: { [primary]: 1, [secondary]: 1 } },
+            { text: answers[2], scores: { [secondary]: 2 } },
+            { text: answers[3], scores: { [secondary]: 2 } }
+        ]
+    };
+}
+
+function buildMbtiDescriptionsFromSettings(resultSettings) {
+    return MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+        const content = String(resultSettings[mbti] && resultSettings[mbti].content || "").trim();
+        if (content) {
+            acc[mbti] = content;
+        }
+        return acc;
+    }, {});
+}
+
+const MBTI_THEME_PROFILES = {
+    INTJ: { alias: "전략 설계형", emoji: "📊", style: "전체 판을 먼저 그리고 움직이는 타입", detail: "장기 플랜과 우선순위를 정교하게 관리합니다.", pros: ["구조화 능력", "목표 집중력", "리스크 예측", "지속 성장"], cons: ["완벽주의 피로", "즉흥 대응 경직", "타인 속도 답답함"], first: "ENFP", second: "ESFP" },
+    INTP: { alias: "분석 실험형", emoji: "🧪", style: "원리를 파고들어 최적해를 찾는 타입", detail: "패턴을 읽고 개선 포인트를 빠르게 찾아냅니다.", pros: ["분석력", "문제 해결", "학습 속도", "객관성"], cons: ["실행 지연", "루틴 약화", "감정 표현 부족"], first: "ENFJ", second: "ESFJ" },
+    ENTJ: { alias: "결과 리더형", emoji: "🚀", style: "목표와 실행을 끝까지 끌고 가는 타입", detail: "결정이 빠르고 책임 있게 판을 정리합니다.", pros: ["결단력", "추진력", "운영 능력", "리더십"], cons: ["압박감 유발", "완급 조절 어려움", "휴식 경시"], first: "INFP", second: "ISFP" },
+    ENTP: { alias: "아이디어 변주형", emoji: "⚡", style: "새로운 방식으로 판을 바꾸는 타입", detail: "변수 많은 상황에서 창의적 전환이 빠릅니다.", pros: ["창의성", "순발력", "적응력", "유연성"], cons: ["마무리 약화", "지속성 부족", "리스크 과소평가"], first: "ISTJ", second: "ISFJ" },
+    INFJ: { alias: "통찰 조율형", emoji: "🔮", style: "사람과 흐름의 결을 함께 읽는 타입", detail: "깊이 있는 몰입으로 질 높은 결과를 만듭니다.", pros: ["통찰력", "공감력", "집중 몰입", "관계 품질"], cons: ["감정 소모", "결정 지연", "부담 내재화"], first: "ENTP", second: "ESTP" },
+    INFP: { alias: "감성 몰입형", emoji: "🎧", style: "의미와 진정성에 몰입할 때 빛나는 타입", detail: "자기만의 기준과 취향이 분명합니다.", pros: ["감수성", "진정성", "내적 동기", "개성"], cons: ["기분 기복", "현실 관리 약화", "비교 민감성"], first: "ENTJ", second: "ESTJ" },
+    ENFJ: { alias: "관계 프로듀서형", emoji: "🤝", style: "사람과 성과의 균형을 맞추는 타입", detail: "팀의 에너지와 방향을 함께 관리합니다.", pros: ["조율력", "동기 부여", "소통력", "협업"], cons: ["책임 과부하", "자기 회복 지연", "거절 어려움"], first: "INTP", second: "ISTP" },
+    ENFP: { alias: "분위기 촉진형", emoji: "🌈", style: "재미와 가능성을 빠르게 연결하는 타입", detail: "현장 에너지를 올리고 참여를 이끌어냅니다.", pros: ["친화력", "회복 탄력성", "도전성", "낙관성"], cons: ["집중 분산", "우선순위 변동", "루틴 약화"], first: "INTJ", second: "ISTJ" },
+    ISTJ: { alias: "루틴 마스터형", emoji: "📋", style: "기본기와 반복으로 실력을 쌓는 타입", detail: "준비와 실행에서 신뢰를 만듭니다.", pros: ["준비 철저", "안정성", "책임감", "재현성"], cons: ["변화 대응 지연", "유연성 부족", "표현 건조"], first: "ENTP", second: "ENFP" },
+    ISFJ: { alias: "안전 케어형", emoji: "🛟", style: "안정감과 배려를 우선하는 타입", detail: "작은 위험과 불편을 먼저 발견해 보완합니다.", pros: ["안전 감각", "배려", "꾸준함", "신뢰 형성"], cons: ["자기 요구 후순위", "책임 과부하", "새 환경 긴장"], first: "ESTP", second: "ENTP" },
+    ESTJ: { alias: "운영 매니저형", emoji: "⏱️", style: "구조와 실행으로 결과를 만드는 타입", detail: "역할 분담과 일정 관리가 정확합니다.", pros: ["운영력", "완수율", "판단 속도", "현실 감각"], cons: ["유연성 부족", "속도 압박", "느린 템포 답답함"], first: "ISFP", second: "INFP" },
+    ESFJ: { alias: "팀 케어매니저형", emoji: "☕", style: "사람 중심으로 현장을 안정시키는 타입", detail: "모두가 편한 환경을 만들며 협업을 끌어냅니다.", pros: ["소통력", "협업 적응", "케어 능력", "분위기 관리"], cons: ["평가 민감", "배려 과부하", "타인 기준 우선"], first: "INTP", second: "INTJ" },
+    ISTP: { alias: "실전 테크형", emoji: "🔧", style: "문제를 현장에서 바로 해결하는 타입", detail: "핸즈온 감각이 뛰어나고 위기 대응이 침착합니다.", pros: ["현장 대응", "기술 습득", "침착함", "효율성"], cons: ["감정 표현 부족", "장기 계획 지연", "루틴 지루함"], first: "ENFJ", second: "ESFJ" },
+    ISFP: { alias: "감각 크리에이터형", emoji: "🎨", style: "현재 감각과 분위기를 살리는 타입", detail: "자연스럽고 개성 있는 흐름을 만듭니다.", pros: ["감각 표현", "유연한 대응", "몰입도", "취향 구축"], cons: ["체계 기록 부족", "기분 영향", "목표 느슨 가능"], first: "ESTJ", second: "ENTJ" },
+    ESTP: { alias: "액션 드라이브형", emoji: "🏍️", style: "상황 판단과 실행이 빠른 타입", detail: "현장 변수에서 오히려 강해지는 편입니다.", pros: ["순발력", "적응력", "결단 속도", "현장 에너지"], cons: ["계획 누락", "리스크 경시", "반복 회피"], first: "ISFJ", second: "INFJ" },
+    ESFP: { alias: "페스티벌 메이커형", emoji: "🎉", style: "사람을 연결해 분위기를 살리는 타입", detail: "즐기는 힘이 커서 회복 탄력성이 높습니다.", pros: ["친화력", "현장 에너지", "적응력", "회복력"], cons: ["장기 계획 약화", "집중 분산", "흥미 중심 선택"], first: "INTJ", second: "ISTJ" }
+};
+
+function createThemeResultSettings(config) {
+    const settings = createEmptyResultSettings();
+
+    function buildContent(summary, interpretation, pros, cons, matchFirst, matchSecond) {
+        const interpretationHtml = interpretation.map((line) => `<p>${line}</p>`).join("\n");
+        const prosHtml = pros.map((item) => `<li>${item}</li>`).join("");
+        const consHtml = cons.map((item) => `<li>${item}</li>`).join("");
+
+        return `<h3>한 줄 요약</h3>
+<p>${summary}</p>
+
+<br><br>
+<h3>유형 해석</h3>
+${interpretationHtml}
+
+<h4>장점</h4>
+<ul>
+${prosHtml}
+</ul>
+
+<h4>단점</h4>
+<ul>
+${consHtml}
+</ul>
+
+<br><br>
+<h3>나와 잘 맞는 유형</h3>
+<p><strong>1위 : ${matchFirst}</strong><br>
+- 서로 부족한 부분을 자연스럽게 보완<br>
+- 관점이 달라 문제 해결 속도 상승<br>
+- 오래 갈수록 시너지 폭이 커짐
+</p>
+
+<p><strong>2위 : ${matchSecond}</strong><br>
+- 분위기와 실행의 균형이 좋아짐<br>
+- 지치기 쉬운 구간에서 회복력 보완<br>
+- 관계 만족도와 성과를 함께 챙길 수 있음
+</p>`;
+    }
+
+    MBTI_RESULT_TYPES.forEach((mbti) => {
+        const profile = MBTI_THEME_PROFILES[mbti];
+        const firstProfile = MBTI_THEME_PROFILES[profile.first];
+        const secondProfile = MBTI_THEME_PROFILES[profile.second];
+        settings[mbti].title = `<h2>당신은 ${mbti} : ${config.titlePrefix} ${profile.alias} ${profile.emoji}</h2>`;
+        settings[mbti].content = buildContent(
+            `${config.summaryPrefix} ${profile.alias}.`,
+            [
+                `${config.subject}에서 당신은 ${profile.style}입니다.`,
+                profile.detail,
+                `${config.growthLine}`
+            ],
+            profile.pros,
+            profile.cons,
+            `${profile.first} : ${firstProfile.alias} ${firstProfile.emoji}`,
+            `${profile.second} : ${secondProfile.alias} ${secondProfile.emoji}`
+        );
+    });
+
+    return settings;
+}
+
+function getLoveStyleSeedQuestions() {
+    return [
+        createAxisQuestion("썸이 시작되면 당신의 연락 템포는?", ["하루에도 여러 번 먼저 연락한다.", "상대 템포 맞춰 자연스럽게 주고받는다.", "필요할 때만 짧게 연락한다.", "대화보다 직접 만남이 편하다."], "E", "I"),
+        createAxisQuestion("첫 데이트 장소를 정할 때?", ["후기 좋은 곳 위주로 동선까지 짠다.", "후기 + 분위기를 함께 본다.", "느낌 좋은 골목을 탐험한다.", "그날 끌리는 곳으로 즉흥 이동한다."], "S", "N"),
+        createAxisQuestion("연인과 갈등이 생기면?", ["사실 관계를 정리해 해결안을 찾는다.", "이유와 감정을 함께 정리한다.", "상대 감정을 먼저 충분히 듣는다.", "먼저 안아주고 분위기부터 푼다."], "T", "F"),
+        createAxisQuestion("기념일 준비 스타일은?", ["한 달 전부터 예약/선물/시간표 준비.", "큰 틀만 잡고 세부는 조정.", "당일 컨디션 따라 맞춘다.", "서프라이즈는 즉흥이 제맛이라 생각."], "J", "P"),
+        createAxisQuestion("연애 중 친구 모임이 겹치면?", ["둘 다 챙기며 일정 조율을 주도한다.", "상황 보며 적당히 균형 맞춘다.", "둘만의 시간을 우선한다.", "조용히 한쪽에 집중한다."], "E", "I"),
+        createAxisQuestion("상대의 작은 변화(말투/표정)를 보면?", ["구체적 행동 변화를 체크한다.", "사실과 느낌을 함께 본다.", "직감적으로 분위기를 읽는다.", "숨은 감정의 맥락까지 상상한다."], "S", "N"),
+        createAxisQuestion("연애 조언을 해줄 때?", ["실행 가능한 방법부터 제시한다.", "방법과 위로를 같이 준다.", "마음이 왜 그런지 먼저 공감한다.", "정답보다 감정 회복을 우선한다."], "T", "F"),
+        createAxisQuestion("주말 데이트는 보통?", ["시간대별로 계획을 짜서 움직인다.", "핵심 일정만 정하고 유동적으로.", "그날 기분 따라 코스를 바꾼다.", "목적지 없이 산책하며 정한다."], "J", "P"),
+        createAxisQuestion("연애 고민을 털어놓는 방식은?", ["친구들과 오픈해서 의견을 듣는다.", "몇 명에게만 선택적으로 말한다.", "혼자 정리한 뒤 필요한 말만 한다.", "대부분 스스로 소화한다."], "E", "I"),
+        createAxisQuestion("선물 고를 때 더 중요한 건?", ["실용성과 사용 빈도.", "실용성도 감성도 모두 고려.", "스토리와 의미 있는 상징.", "상대의 꿈/취향을 떠올리게 하는 무드."], "S", "N"),
+        createAxisQuestion("권태기가 올 때 당신은?", ["문제 원인을 분석하고 액션을 정한다.", "원인 분석 후 대화로 조율한다.", "감정의 결을 먼저 살핀다.", "관계의 온도를 회복하는 시간을 만든다."], "T", "F"),
+        createAxisQuestion("커플 여행 준비는?", ["예산/예약/체크리스트를 완성한다.", "핵심 예약 후 여지는 남긴다.", "현지에서 즉흥 선택을 즐긴다.", "루트보다 순간의 재미를 본다."], "J", "P"),
+        createAxisQuestion("연인이 힘든 시기일 때?", ["우선 해결 가능한 것부터 돕는다.", "현실 도움 + 공감 균형을 맞춘다.", "말보다 마음을 충분히 들어준다.", "옆에 있어주는 것 자체를 최우선한다."], "T", "F"),
+        createAxisQuestion("둘만의 시간을 보낼 때 이상적인 분위기는?", ["재밌게 대화하며 활기 있게.", "상황 따라 텐션을 조절.", "조용하고 안정적인 공간.", "말 없어도 편안한 침묵."], "E", "I"),
+        createAxisQuestion("장기 연애를 위해 가장 중요한 건?", ["함께 지킬 규칙과 습관.", "원칙은 두되 유연하게 운영.", "지속적인 설렘과 새로움.", "각자의 자유와 자율성."], "J", "P")
+    ];
+}
+
+function getConsumptionStyleSeedQuestions() {
+    return [
+        createAxisQuestion("월급 들어온 날 소비 패턴은?", ["바로 친구와 계획을 잡아 지출한다.", "필요한 지출만 우선하고 나머진 조정.", "혼자 예산표 먼저 정리한다.", "일단 계좌를 보고 천천히 결정한다."], "E", "I"),
+        createAxisQuestion("비싼 물건을 살 때 당신은?", ["스펙/AS/리뷰 데이터를 꼼꼼히 본다.", "데이터 보되 사용 장면도 상상한다.", "브랜드 스토리와 감성을 본다.", "미래 라이프스타일 변화를 상상한다."], "S", "N"),
+        createAxisQuestion("친구가 충동구매 고민 상담하면?", ["가성비와 필요도를 계산해 말한다.", "숫자와 만족도를 함께 보자고 한다.", "기분/의미가 큰지 먼저 물어본다.", "자기 행복을 우선하라고 격려한다."], "T", "F"),
+        createAxisQuestion("카드값 관리 방식은?", ["항목별 예산을 미리 배정한다.", "큰 카테고리만 정하고 탄력 운영.", "대략 흐름만 보며 조절한다.", "막판에 몰아서 정리한다."], "J", "P"),
+        createAxisQuestion("할인 정보 발견 시 반응은?", ["단톡방에 바로 공유한다.", "필요한 사람에게만 전달한다.", "나에게 필요한지 먼저 검토한다.", "좋아도 조용히 지나친다."], "E", "I"),
+        createAxisQuestion("마트 장보기 기준은?", ["리스트 기반으로 필요한 것만.", "리스트 + 신상 코너 체크.", "신메뉴/신제품 아이디어 중심.", "장보는 기분 자체를 즐긴다."], "S", "N"),
+        createAxisQuestion("구독 서비스 정리할 때?", ["사용률 수치로 바로 정리한다.", "수치와 만족도를 같이 본다.", "정서적 만족이 큰 건 남긴다.", "기분 회복에 도움되면 유지한다."], "T", "F"),
+        createAxisQuestion("연간 소비 계획을 세운다면?", ["분기별 목표까지 세밀하게 짠다.", "핵심 목표만 두고 유동 조정.", "기회가 오면 과감히 투자한다.", "계획보다 흐름을 탄다."], "J", "P"),
+        createAxisQuestion("쇼핑할 때 동행 스타일은?", ["여럿과 같이 가며 의견 나눈다.", "한두 명과 효율적으로 본다.", "혼자 비교하며 천천히 고른다.", "혼자 조용히 온라인으로 끝낸다."], "E", "I"),
+        createAxisQuestion("중고거래 물건 판단 기준은?", ["실사용 상태와 수리 이력.", "상태와 희소성을 함께 본다.", "희소성과 스토리 가치.", "나중 가치 상승 가능성."], "S", "N"),
+        createAxisQuestion("예산 초과가 발생하면?", ["원인을 계산해 다음 달 기준 수정.", "원인 정리 후 현실적 타협.", "나를 너무 몰아붙이진 않는다.", "이번 만족도를 먼저 인정한다."], "T", "F"),
+        createAxisQuestion("세일 시즌 전략은?", ["구매 리스트를 미리 확정한다.", "필수템만 확정하고 여지 남김.", "보면서 신박한 아이템 발견.", "즉흥 딜 사냥이 재미다."], "J", "P"),
+        createAxisQuestion("지출 스트레스가 높을 때?", ["수치 정리로 불안을 줄인다.", "정리 후 소소한 보상도 준다.", "나를 달래는 소비를 한다.", "좋아하는 경험에 지출한다."], "T", "F"),
+        createAxisQuestion("새 취미 장비를 산다면?", ["커뮤니티 후기와 스펙 표를 본다.", "후기와 취향을 균형 있게 본다.", "내 스타일과 브랜딩을 본다.", "지금 설레는 걸 고른다."], "S", "N"),
+        createAxisQuestion("통장 쪼개기 방식은?", ["목적별로 계좌를 명확히 분리.", "큰 항목만 분리해 유연 운영.", "큰 규칙만 두고 자유롭게 관리.", "월말 결산으로 맞추는 편."], "J", "P")
+    ];
+}
+
+function getRelationshipStyleSeedQuestions() {
+    return [
+        createAxisQuestion("새 모임 첫날 당신은?", ["먼저 다가가서 분위기 푼다.", "옆 사람부터 가볍게 대화한다.", "관찰하면서 천천히 적응한다.", "필요한 말만 하고 흐름을 본다."], "E", "I"),
+        createAxisQuestion("사람을 오래 볼 때 더 보는 건?", ["약속 이행, 시간 개념 같은 행동.", "행동과 분위기를 함께 본다.", "말 사이의 의도와 맥락.", "가능성과 성장 방향."], "S", "N"),
+        createAxisQuestion("친구 둘이 다툴 때 당신은?", ["팩트 정리하고 기준 제시.", "팩트+감정 모두 듣고 중재.", "양쪽 감정부터 안정시킨다.", "상처 최소화가 먼저라고 본다."], "T", "F"),
+        createAxisQuestion("인간관계 유지 방식은?", ["정기 연락/모임 루틴을 만든다.", "핵심 관계만 루틴화한다.", "필요할 때 자연스럽게 연락한다.", "마음 동할 때 깊게 연결한다."], "J", "P"),
+        createAxisQuestion("고민 있을 때 보통?", ["주변에 이야기하며 실마리 찾는다.", "신뢰하는 소수에게만 말한다.", "혼자 정리 후 결론을 공유한다.", "혼자 소화하고 지나간다."], "E", "I"),
+        createAxisQuestion("상대의 호감을 느낄 때 기준은?", ["구체적 행동 변화가 보일 때.", "행동+뉘앙스 함께 볼 때.", "표정과 공기의 변화로 느낄 때.", "직감적으로 '온도'가 맞을 때."], "S", "N"),
+        createAxisQuestion("관계에서 선 넘는 행동이 나오면?", ["명확한 기준과 경계를 말한다.", "경계는 말하되 톤은 부드럽게.", "상대 이유를 먼저 충분히 듣는다.", "관계 손상 최소화를 우선한다."], "T", "F"),
+        createAxisQuestion("지인 관리 스타일은?", ["중요 일정과 생일을 챙긴다.", "핵심 일정만 체크한다.", "기억나는 순간 연락한다.", "형식보다 진심 타이밍을 본다."], "J", "P"),
+        createAxisQuestion("단체 대화에서 당신의 위치는?", ["대화를 이끌고 리액션도 많다.", "필요할 때 핵심 코멘트한다.", "읽고 있다가 필요한 말만 한다.", "개인 대화가 훨씬 편하다."], "E", "I"),
+        createAxisQuestion("오랜 친구를 판단할 때 중요한 건?", ["함께 쌓은 실제 행동 기록.", "기록과 가치관 모두.", "서로의 성장 방향.", "관계의 의미와 비전."], "S", "N"),
+        createAxisQuestion("친구가 반복 실수할 때?", ["원인과 패턴을 짚어준다.", "원인 설명 + 공감을 병행.", "왜 힘든지 마음을 듣는다.", "관계 회복을 우선한다."], "T", "F"),
+        createAxisQuestion("관계 에너지 관리법은?", ["만남 주기와 휴식 주기를 계획.", "큰 틀만 정하고 유연 조절.", "상황 따라 즉흥 조절.", "흐름에 맡기는 편."], "J", "P"),
+        createAxisQuestion("낯선 단체 여행에서 당신은?", ["여러 사람과 빨리 친해진다.", "분위기 맞춰 천천히 친해진다.", "소수와 깊게 연결한다.", "혼자만의 시간도 챙긴다."], "E", "I"),
+        createAxisQuestion("인연의 기준을 말하자면?", ["함께한 현실적 신뢰.", "현실 신뢰 + 가치관 일치.", "서로의 결을 이해하는 감각.", "함께 성장할 가능성."], "S", "N"),
+        createAxisQuestion("관계를 오래 지키는 핵심은?", ["명확한 기준과 책임.", "기준과 배려의 균형.", "서로의 감정 존중.", "자율성과 자유의 여지."], "J", "P")
+    ];
+}
+
+function getTravelStyleSeedQuestions() {
+    return [
+        createAxisQuestion("여행 멤버를 정할 때 당신은?", ["친구들 모아 단체로 가는 걸 선호.", "소규모로 밸런스 맞춰 간다.", "소수 정예 or 혼여를 선호.", "혼자 완전 자유 여행 선호."], "E", "I"),
+        createAxisQuestion("여행지 선택 기준 1순위는?", ["교통/치안/동선의 현실성.", "현실성 + 컨셉 둘 다.", "스토리 있는 장소와 테마.", "미지의 가능성과 신선함."], "S", "N"),
+        createAxisQuestion("여행 중 의견 충돌 나면?", ["현실적 기준으로 빠르게 결론.", "기준 설명 + 감정 배려.", "감정 먼저 정리하고 조율.", "분위기 회복을 최우선."], "T", "F"),
+        createAxisQuestion("여행 일정표는?", ["시간대별로 촘촘히 작성한다.", "핵심 스팟만 고정한다.", "큰 틀 없이 현지에서 정한다.", "계획표 자체를 안 만든다."], "J", "P"),
+        createAxisQuestion("공항에서의 당신은?", ["여기저기 대화하며 텐션 올림.", "필요한 소통만 하고 이동.", "조용히 루틴대로 움직임.", "혼자 음악 들으며 몰입."], "E", "I"),
+        createAxisQuestion("여행 기록 남기는 방식은?", ["영수증/동선/비용까지 기록.", "핵심 기록 + 감상 메모.", "사진과 분위기 위주 기록.", "느낌과 아이디어 위주 기록."], "S", "N"),
+        createAxisQuestion("여행 동행이 실수했을 때?", ["해결 프로세스를 바로 제시.", "해결 + 정서 안정 병행.", "괜찮은지 먼저 공감.", "기분 회복을 먼저 돕는다."], "T", "F"),
+        createAxisQuestion("현지 맛집 탐색 스타일은?", ["리스트 기반으로 순서대로.", "리스트+현지 추천 섞어서.", "걸으며 끌리는 곳 발견.", "줄 보고 즉흥 도전."], "J", "P"),
+        createAxisQuestion("투어 중 소통량은?", ["처음 만난 사람과도 금방 친해짐.", "필요한 대화만 적절히.", "동행과만 깊게 이야기.", "말보다 관찰이 편함."], "E", "I"),
+        createAxisQuestion("기념품 고를 때?", ["실용성과 내구성을 본다.", "실용성과 의미를 같이 본다.", "이야기 있는 로컬 굿즈.", "나중에 영감 줄 아이템."], "S", "N"),
+        createAxisQuestion("여행 예산이 초과되면?", ["지출 구조를 계산해 조정.", "계산 후 만족도도 고려.", "경험 가치가 크면 수용.", "추억이 우선이라 본다."], "T", "F"),
+        createAxisQuestion("돌발 날씨 변화가 오면?", ["대체 플랜으로 즉시 전환.", "대체 플랜 + 현장 감성 반영.", "상황 보며 즉흥 재설계.", "오히려 특별한 경험으로 즐김."], "J", "P"),
+        createAxisQuestion("여행 마지막 날 당신은?", ["여럿과 끝까지 에너지 있게.", "필요한 인사만 깔끔히.", "조용히 마무리하며 여운 즐김.", "혼자 정리하며 복기."], "E", "I"),
+        createAxisQuestion("좋은 여행의 조건은?", ["불편이 적고 일정이 안정적.", "안정 + 새로움의 균형.", "새로운 시각을 얻는 경험.", "삶의 관점을 바꾸는 장면."], "S", "N"),
+        createAxisQuestion("다음 여행 준비 시작 시점은?", ["돌아오자마자 계획 시작.", "대략 시점 정하고 천천히.", "기회 오면 바로.", "마음이 움직일 때."], "J", "P")
+    ];
+}
+
+function getOfficeCharacterSeedQuestions() {
+    return [
+        createAxisQuestion("회의 시작 전 당신은?", ["분위기 풀며 참여를 끌어낸다.", "핵심 참석자와 먼저 조율한다.", "자료 최종 확인하며 준비한다.", "필요한 발언 포인트만 정리한다."], "E", "I"),
+        createAxisQuestion("업무 우선순위 정할 때?", ["당장 실행 가능한 현실 기준.", "현실 기준 + 중장기 영향.", "미래 확장성과 방향성.", "새로운 기회 가능성."], "S", "N"),
+        createAxisQuestion("팀원 실수 피드백 방식은?", ["팩트와 기준으로 분명히 전달.", "기준 전달 + 톤 조절.", "상대 감정 상태부터 확인.", "심리적 안전감부터 만든다."], "T", "F"),
+        createAxisQuestion("업무 일정 관리 스타일은?", ["캘린더/체크리스트로 촘촘히.", "핵심 마일스톤 중심 관리.", "상황 따라 우선순위 재배치.", "마감 직전 집중형."], "J", "P"),
+        createAxisQuestion("점심시간 선호 패턴은?", ["여럿과 식사하며 정보 교환.", "소수와 가볍게 대화.", "혼밥하며 머리 식힘.", "짧게 쉬며 조용히 회복."], "E", "I"),
+        createAxisQuestion("보고서 작성 강점은?", ["구체적 데이터와 실행안.", "데이터+의미를 균형 있게.", "맥락과 방향성 제시.", "새로운 관점을 던짐."], "S", "N"),
+        createAxisQuestion("협업 갈등이 생기면?", ["역할/기준을 명확히 재정의.", "역할 정리 + 관계 완충.", "의도와 감정을 먼저 조율.", "관계 회복을 선행한다."], "T", "F"),
+        createAxisQuestion("프로젝트 시작 방식은?", ["일정표/리스크표 먼저 만든다.", "핵심 일정 먼저 고정.", "작게 시작해 빠르게 수정.", "일단 실행하며 모양 잡는다."], "J", "P"),
+        createAxisQuestion("사내 네트워킹에 대해 당신은?", ["다양한 팀과 적극적으로 교류.", "필요한 연결 중심으로 교류.", "핵심 인맥만 유지.", "업무 외 네트워킹은 최소화."], "E", "I"),
+        createAxisQuestion("성과를 보는 기준은?", ["수치와 산출물의 명확함.", "수치 + 성장 가능성.", "변화의 방향과 잠재력.", "팀 문화에 남긴 영향."], "S", "N"),
+        createAxisQuestion("야근이 불가피할 때 당신은?", ["효율 재설계로 빠르게 끝낸다.", "효율 챙기며 팀 상태도 본다.", "팀 컨디션을 먼저 살핀다.", "지치지 않게 정서 관리 우선."], "T", "F"),
+        createAxisQuestion("데드라인 압박 시 행동은?", ["계획표대로 밀어붙인다.", "핵심만 남기고 재조정.", "유연하게 우선순위 전환.", "에너지 높은 시간에 몰입."], "J", "P"),
+        createAxisQuestion("사내 행사 참여 스타일은?", ["앞장서서 분위기 띄운다.", "필요한 만큼 참여한다.", "짧게 참여 후 빠진다.", "가능하면 조용히 패스."], "E", "I"),
+        createAxisQuestion("커리어 고민할 때 중점은?", ["현실적 역량과 시장 수요.", "현실성과 비전의 균형.", "장기 비전과 의미.", "미래 가능성과 확장성."], "S", "N"),
+        createAxisQuestion("일 잘하는 팀의 조건은?", ["명확한 역할/규칙/프로세스.", "기준은 명확하되 유연성.", "신뢰와 공감의 문화.", "자율성과 실험의 여지."], "J", "P")
+    ];
+}
+
+function getStressReliefSeedQuestions() {
+    return [
+        createAxisQuestion("스트레스가 쌓였을 때 첫 반응은?", ["사람 만나서 바로 턴다.", "신뢰하는 사람과만 이야기.", "혼자 정리 시간을 갖는다.", "조용히 잠수하고 회복한다."], "E", "I"),
+        createAxisQuestion("회복 활동 고를 때 기준은?", ["효과가 검증된 방법.", "효과 + 분위기 함께 고려.", "새로운 방식의 신선함.", "직감적으로 끌리는 방법."], "S", "N"),
+        createAxisQuestion("힘든 친구를 도울 때?", ["현실적인 해결책부터 제시.", "해결책과 공감을 병행.", "감정을 충분히 들어준다.", "위로와 안정감을 먼저 준다."], "T", "F"),
+        createAxisQuestion("회복 루틴을 만들 때?", ["수면/운동/식단 루틴 고정.", "핵심 루틴만 고정.", "상황 맞춰 유동적으로 운영.", "그날 컨디션 따라 즉흥 선택."], "J", "P"),
+        createAxisQuestion("스트레스 날 저녁 선호는?", ["사람들과 가볍게 수다.", "친한 사람과 짧게 대화.", "혼자 조용한 취미.", "말 없이 쉬는 시간."], "E", "I"),
+        createAxisQuestion("스트레스 원인 파악 방식은?", ["구체적 사건/패턴 기록.", "기록 + 의미 분석.", "감정 흐름과 맥락 파악.", "앞으로의 변화 신호로 해석."], "S", "N"),
+        createAxisQuestion("상사 피드백이 날카로우면?", ["논리적으로 분해해 액션 정함.", "논리 정리 후 관계도 챙김.", "상처 포인트를 먼저 돌봄.", "자존감 회복부터 한다."], "T", "F"),
+        createAxisQuestion("휴식일 운영 방식은?", ["시간표대로 회복 루틴 실행.", "핵심 회복 과제만 수행.", "기분 따라 바꾼다.", "완전 노플랜으로 쉰다."], "J", "P"),
+        createAxisQuestion("답답할 때 연락 패턴은?", ["단톡/지인에게 폭넓게 턴다.", "소수에게만 톡한다.", "거의 연락 안 하고 정리.", "완전히 혼자 회복한다."], "E", "I"),
+        createAxisQuestion("힐링 장소 선택은?", ["접근성/편의성 우선.", "편의성과 분위기 균형.", "새로움/감성 포인트 우선.", "상상력을 자극하는 공간."], "S", "N"),
+        createAxisQuestion("감정 폭발 직전이면?", ["원인-대안 구조로 진정.", "정리 후 주변과 공유.", "감정부터 인정하고 풀기.", "따뜻한 위로를 먼저 찾기."], "T", "F"),
+        createAxisQuestion("장기 스트레스 관리 전략은?", ["월간 계획으로 관리.", "핵심 지표만 관리.", "상황별 커스텀 대응.", "필요할 때마다 즉시 해소."], "J", "P"),
+        createAxisQuestion("회복된 뒤 당신의 모습은?", ["주변과 다시 활발히 연결.", "필요한 관계부터 회복.", "혼자 페이스 유지.", "내 루틴을 조용히 지킴."], "E", "I"),
+        createAxisQuestion("스트레스의 의미를 본다면?", ["몸과 일정의 경고 신호.", "경고 신호 + 방향 조정.", "내면이 보내는 메시지.", "새로운 전환의 출발점."], "S", "N"),
+        createAxisQuestion("회복에 가장 중요한 원칙은?", ["지킬 규칙과 반복.", "원칙 + 유연성 균형.", "나를 이해해주는 관계.", "자유롭고 자율적인 회복."], "J", "P")
+    ];
+}
+
+function getFandomStyleSeedQuestions() {
+    return [
+        createAxisQuestion("최애 컴백 소식 뜨면 당신은?", ["바로 단톡방 소환하고 같이 덕질.", "친한 덕메 몇 명과 정보 공유.", "조용히 혼자 떡밥 정리 시작.", "혼자 감상하고 천천히 기록."], "E", "I"),
+        createAxisQuestion("굿즈 구매 기준은?", ["실사용 가치/퀄리티 확인.", "실용성과 상징성 균형.", "스토리/컨셉 가치 중시.", "희소성과 감정 임팩트 중시."], "S", "N"),
+        createAxisQuestion("팬덤 내 논쟁이 생기면?", ["팩트와 근거 중심으로 정리.", "근거 제시 + 톤 조절.", "감정 상처부터 보듬기.", "관계 회복을 우선."], "T", "F"),
+        createAxisQuestion("덕질 일정 관리 스타일은?", ["발매일/방송일 캘린더 고정.", "핵심 일정만 관리.", "상황 보며 유동 참여.", "그날 텐션 따라 참여."], "J", "P"),
+        createAxisQuestion("덕질 소통 채널 선호는?", ["커뮤니티/SNS 활발 활동.", "소규모 채널 중심 활동.", "읽기 중심, 가끔만 글 작성.", "거의 눈팅 위주."], "E", "I"),
+        createAxisQuestion("콘텐츠 해석 방식은?", ["가사/연출의 실제 정보 중심.", "정보 + 상징 해석 함께.", "세계관/메시지 중심 해석.", "미래 떡밥까지 확장 상상."], "S", "N"),
+        createAxisQuestion("지인이 최애를 모르면?", ["핵심 포인트를 논리적으로 영업.", "포인트 설명 + 입덕 포인트 추천.", "매력과 감정을 공유.", "좋아하게 될 장면부터 보여줌."], "T", "F"),
+        createAxisQuestion("콘서트 준비는?", ["좌석/동선/준비물 체크 완료.", "핵심 준비만 먼저.", "현장 상황에 맞춰 조절.", "즉흥 에너지로 돌파."], "J", "P"),
+        createAxisQuestion("팬아트/2차 창작 소비는?", ["여러 사람과 같이 반응/공유.", "좋은 것만 선별 공유.", "조용히 저장하고 감상.", "혼자 오래 파고든다."], "E", "I"),
+        createAxisQuestion("입덕 포인트는 주로?", ["실력/성과/활동 이력.", "실력 + 컨셉 조화.", "서사/메시지/세계관.", "가능성과 성장 드라마."], "S", "N"),
+        createAxisQuestion("최애 이슈가 터졌을 때?", ["사실관계 확인 후 판단.", "사실 확인 + 팬덤 분위기 고려.", "상처받은 마음부터 케어.", "신뢰 회복의 과정 중시."], "T", "F"),
+        createAxisQuestion("덕질 예산 운영은?", ["월별 예산 엄수.", "핵심 항목만 예산화.", "상황 따라 유동 조정.", "한정판 앞에선 유연해짐."], "J", "P"),
+        createAxisQuestion("덕질로 얻는 가장 큰 즐거움은?", ["함께 떠드는 실시간 텐션.", "좋은 사람들과의 연결.", "혼자 깊게 몰입하는 시간.", "조용히 오래 사랑하는 감정."], "E", "I"),
+        createAxisQuestion("최애 콘텐츠를 복습할 때?", ["디테일과 팩트 재확인.", "디테일 + 숨은 의미 확인.", "상징과 감정선 해석.", "다음 전개 상상하며 복습."], "S", "N"),
+        createAxisQuestion("오래 덕질하는 비결은?", ["지킬 루틴과 기록.", "핵심 루틴 + 유연함.", "마음이 움직이는 순간 유지.", "자유롭고 자율적인 몰입."], "J", "P")
+    ];
+}
+
+async function ensureThemeSeedTest(seedKey, meta, questions, resultSettings, errorLabel) {
+    if (!isAuthReady) {
+        return;
+    }
+    if (!Array.isArray(questions) || questions.length !== 15) {
+        return;
+    }
+
+    try {
+        const existing = await db.collection("tests").where("seedKey", "==", seedKey).limit(1).get();
+        if (!existing.empty) {
+            return;
+        }
+        await db.collection("tests").add({
+            seedKey,
+            title: meta.title,
+            cardTitle: meta.cardTitle,
+            navTitle: meta.navTitle,
+            isRecommended: true,
+            viewCount: 0,
+            thumbnail: "",
+            resultSettings,
+            questions,
+            mbtiDescriptions: buildMbtiDescriptionsFromSettings(resultSettings),
+            isPublished: true,
+            createdById: ADMIN_ID,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        console.error(`${errorLabel} 자동 등록 실패:`, error);
+    }
+}
+
+async function ensureLoveStyleMbtiTest() {
+    await ensureThemeSeedTest(
+        LOVE_STYLE_TEST_SEED_KEY,
+        { title: "연애 스타일 MBTI 테스트", cardTitle: "연애 스타일 MBTI 테스트", navTitle: "나는 어떤 연애형일까?" },
+        getLoveStyleSeedQuestions(),
+        createThemeResultSettings({ titlePrefix: "연애 스타일", summaryPrefix: "연애에서 당신은", subject: "연애 관계", growthLine: "관계의 리듬을 이해할수록 만족도가 더 올라갑니다." }),
+        "연애 스타일 MBTI 테스트"
+    );
+}
+
+async function ensureConsumptionStyleMbtiTest() {
+    await ensureThemeSeedTest(
+        CONSUMPTION_STYLE_TEST_SEED_KEY,
+        { title: "나의 소비 성향 MBTI 테스트", cardTitle: "나의 소비 성향 MBTI 테스트", navTitle: "나는 어떤 소비형일까?" },
+        getConsumptionStyleSeedQuestions(),
+        createThemeResultSettings({ titlePrefix: "소비 성향", summaryPrefix: "소비에서 당신은", subject: "돈과 선택의 순간", growthLine: "자기 패턴을 알수록 후회 없는 소비로 연결됩니다." }),
+        "소비 성향 MBTI 테스트"
+    );
+}
+
+async function ensureRelationshipStyleMbtiTest() {
+    await ensureThemeSeedTest(
+        RELATIONSHIP_STYLE_TEST_SEED_KEY,
+        { title: "인간관계 MBTI 테스트", cardTitle: "인간관계 MBTI 테스트", navTitle: "나는 어떤 관계형일까?" },
+        getRelationshipStyleSeedQuestions(),
+        createThemeResultSettings({ titlePrefix: "인간관계", summaryPrefix: "관계에서 당신은", subject: "사람과의 거리", growthLine: "자신의 관계 방식을 인지할수록 더 건강한 연결이 만들어집니다." }),
+        "인간관계 MBTI 테스트"
+    );
+}
+
+async function ensureTravelStyleMbtiTest() {
+    await ensureThemeSeedTest(
+        TRAVEL_STYLE_TEST_SEED_KEY,
+        { title: "여행 성향 MBTI 테스트", cardTitle: "여행 성향 MBTI 테스트", navTitle: "나는 어떤 여행형일까?" },
+        getTravelStyleSeedQuestions(),
+        createThemeResultSettings({ titlePrefix: "여행 성향", summaryPrefix: "여행에서 당신은", subject: "길 위의 선택", growthLine: "여행 패턴을 이해하면 만족도 높은 코스를 만들 수 있습니다." }),
+        "여행 성향 MBTI 테스트"
+    );
+}
+
+async function ensureOfficeCharacterMbtiTest() {
+    await ensureThemeSeedTest(
+        OFFICE_CHARACTER_TEST_SEED_KEY,
+        { title: "회사생활 캐릭터 MBTI 테스트", cardTitle: "회사생활 캐릭터 MBTI 테스트", navTitle: "나는 어떤 회사생활 캐릭터일까?" },
+        getOfficeCharacterSeedQuestions(),
+        createThemeResultSettings({ titlePrefix: "회사생활", summaryPrefix: "회사에서 당신은", subject: "업무와 협업", growthLine: "자신의 업무 캐릭터를 알면 성과와 관계를 함께 높일 수 있습니다." }),
+        "회사생활 캐릭터 MBTI 테스트"
+    );
+}
+
+async function ensureStressReliefMbtiTest() {
+    await ensureThemeSeedTest(
+        STRESS_RELIEF_TEST_SEED_KEY,
+        { title: "스트레스 해소법 MBTI 테스트", cardTitle: "스트레스 해소법 MBTI 테스트", navTitle: "나는 어떤 회복형일까?" },
+        getStressReliefSeedQuestions(),
+        createThemeResultSettings({ titlePrefix: "회복 스타일", summaryPrefix: "스트레스 상황에서 당신은", subject: "회복의 순간", growthLine: "내 회복 공식을 찾으면 일상 에너지 관리가 훨씬 쉬워집니다." }),
+        "스트레스 해소법 MBTI 테스트"
+    );
+}
+
+async function ensureFandomStyleMbtiTest() {
+    await ensureThemeSeedTest(
+        FANDOM_STYLE_TEST_SEED_KEY,
+        { title: "나의 덕질 성향 유형 MBTI 테스트", cardTitle: "나의 덕질 성향 유형 MBTI 테스트", navTitle: "나는 어떤 덕질형일까?" },
+        getFandomStyleSeedQuestions(),
+        createThemeResultSettings({ titlePrefix: "덕질 성향", summaryPrefix: "덕질에서 당신은", subject: "팬심과 몰입", growthLine: "덕질 패턴을 알면 더 오래, 더 즐겁게 애정을 이어갈 수 있습니다." }),
+        "덕질 성향 MBTI 테스트"
+    );
+}
+
 function removeH2BlocksFromHtml(raw) {
     return String(raw || "")
         .replace(/<h2\b[^>]*>[\s\S]*?<\/h2>\s*/gi, "")
@@ -2739,6 +3093,13 @@ if (resultContentInputEl) {
             await ensureSurfingMbtiTest();
             await ensureCampingMbtiTest();
             await ensureMotorbikeMbtiTest();
+            await ensureLoveStyleMbtiTest();
+            await ensureConsumptionStyleMbtiTest();
+            await ensureRelationshipStyleMbtiTest();
+            await ensureTravelStyleMbtiTest();
+            await ensureOfficeCharacterMbtiTest();
+            await ensureStressReliefMbtiTest();
+            await ensureFandomStyleMbtiTest();
             state.currentPage = 1;
             await loadTestList();
             return;
