@@ -8,6 +8,7 @@ const PAGE_SIZE = 15;
 const DEFAULT_TEST_SEED_KEY = "default-mbti-personality-v1";
 const SURFING_TEST_SEED_KEY = "surfing-mbti-youth-v1";
 const CAMPING_TEST_SEED_KEY = "camping-mbti-3040-v1";
+const MOTORBIKE_TEST_SEED_KEY = "motorbike-mbti-30s-v1";
 const EXCEL_CELL_TEXT_LIMIT = 32767;
 
 const loginPanelEl = document.getElementById("admin-login-panel");
@@ -1480,7 +1481,8 @@ function createSurfingSeedResultSettings() {
         return `<h3>한 줄 요약</h3>
 <p>${summary}</p>
 
-<h4>유형 해석</h4>
+<br><br>
+<h3>유형 해석</h3>
 ${interpretationHtml}
 
 <h4>장점</h4>
@@ -1493,7 +1495,8 @@ ${prosHtml}
 ${consHtml}
 </ul>
 
-<h4>나와 잘 맞는 유형</h4>
+<br><br>
+<h3>나와 잘 맞는 유형</h3>
 <p><strong>1위 : ${matchFirst.title}</strong><br>
 - ${matchFirst.points[0]}<br>
 - ${matchFirst.points[1]}<br>
@@ -1840,7 +1843,8 @@ function createCampingSeedResultSettings() {
         return `<h3>한 줄 요약</h3>
 <p>${summary}</p>
 
-<h4>유형 해석</h4>
+<br><br>
+<h3>유형 해석</h3>
 ${interpretationHtml}
 
 <h4>장점</h4>
@@ -1853,7 +1857,8 @@ ${prosHtml}
 ${consHtml}
 </ul>
 
-<h4>나와 잘 맞는 유형</h4>
+<br><br>
+<h3>나와 잘 맞는 유형</h3>
 <p><strong>1위 : ${matchFirst.title}</strong><br>
 - ${matchFirst.points[0]}<br>
 - ${matchFirst.points[1]}<br>
@@ -2033,19 +2038,252 @@ ${consHtml}
     return settings;
 }
 
+function getMotorbikeSeedQuestions() {
+    return [
+        {
+            question: "주말 라이딩 공지 올릴 때 당신은?",
+            answers: [
+                { text: "코스/집결지/시간표까지 한 번에 공지한다.", scores: { E: 2 } },
+                { text: "친한 멤버 몇 명에게 먼저 톡으로 확인한다.", scores: { E: 1, I: 1 } },
+                { text: "조용히 혼자 코스부터 탄 뒤 후기 공유한다.", scores: { I: 2 } },
+                { text: "일단 혼자 출발하고 도착 인증만 남긴다.", scores: { I: 2 } }
+            ]
+        },
+        {
+            question: "라이딩 코스 고를 때 제일 먼저 보는 건?",
+            answers: [
+                { text: "도로 상태, 휴게소 간격, 실제 주행 거리.", scores: { S: 2 } },
+                { text: "실측 정보 보고 컨셉(바다/산길)도 본다.", scores: { S: 1, N: 1 } },
+                { text: "이번에 어떤 스토리를 만들지 감으로 고른다.", scores: { N: 2 } },
+                { text: "\"오늘은 여기 느낌이다\" 직감으로 간다.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "동행이 갑자기 실수했을 때 당신 반응은?",
+            answers: [
+                { text: "원인과 재발 방지 포인트를 먼저 정리한다.", scores: { T: 2 } },
+                { text: "괜찮은지 상태부터 확인하고 안심시킨다.", scores: { F: 2 } },
+                { text: "안전 피드백과 멘탈 케어를 같이 한다.", scores: { T: 1, F: 1 } },
+                { text: "농담 한 마디로 긴장 풀고 천천히 맞춘다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "라이딩 준비 방식은?",
+            answers: [
+                { text: "전날 장비 체크 + 당일 루틴까지 고정이다.", scores: { J: 2 } },
+                { text: "핵심은 전날 준비, 세부는 당일 조정한다.", scores: { J: 1, P: 1 } },
+                { text: "아침 컨디션 보고 즉석으로 세팅한다.", scores: { P: 2 } },
+                { text: "시동 걸고 달리면서 맞춰간다.", scores: { P: 2 } }
+            ]
+        },
+        {
+            question: "바이크 카페에서 낯선 라이더를 만나면?",
+            answers: [
+                { text: "먼저 말 걸고 코스 정보부터 교환한다.", scores: { E: 2 } },
+                { text: "분위기 보며 필요한 대화만 한다.", scores: { E: 1, I: 1 } },
+                { text: "혼자 커피 마시며 다음 코스를 본다.", scores: { I: 2 } },
+                { text: "헬멧 안 벗고 조용히 쉬다 출발한다.", scores: { I: 2 } }
+            ]
+        },
+        {
+            question: "새 장비(헬멧/재킷) 고르는 기준은?",
+            answers: [
+                { text: "보호 등급, 무게, 실제 리뷰 데이터를 본다.", scores: { S: 2 } },
+                { text: "성능 먼저 보고 디자인은 그다음 본다.", scores: { S: 1, N: 1 } },
+                { text: "브랜드 철학과 무드가 맞는지 본다.", scores: { N: 2 } },
+                { text: "거울 앞 10초, '이건 내 거다'면 끝.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "초보 라이더가 코스 질문하면?",
+            answers: [
+                { text: "위험 구간/속도 포인트를 구조적으로 알려준다.", scores: { T: 2 } },
+                { text: "긴장 안 하게 공감부터 해준다.", scores: { F: 2 } },
+                { text: "팩트 설명 + 기분 케어를 같이 한다.", scores: { T: 1, F: 1 } },
+                { text: "옆에서 페이스 맞춰주며 자신감부터 준다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "한 달 라이딩 루틴은?",
+            answers: [
+                { text: "주차별 코스/거리 목표를 미리 짠다.", scores: { J: 2 } },
+                { text: "주간 큰 틀만 정하고 유동적으로 탄다.", scores: { J: 1, P: 1 } },
+                { text: "날씨 좋은 날 몰아서 탄다.", scores: { P: 2 } },
+                { text: "스케줄은 마음이 시키는 대로 간다.", scores: { P: 2 } }
+            ]
+        },
+        {
+            question: "라이딩 사진/영상 공유 스타일은?",
+            answers: [
+                { text: "스토리텔링 편집해서 단톡에 풀업한다.", scores: { E: 2 } },
+                { text: "핵심 컷 몇 장만 공유한다.", scores: { E: 1, I: 1 } },
+                { text: "개인 보관만 하고 공개는 거의 안 한다.", scores: { I: 2 } },
+                { text: "눈으로 저장했으면 됐다고 생각한다.", scores: { I: 2 } }
+            ]
+        },
+        {
+            question: "갑자기 비 예보가 뜨면?",
+            answers: [
+                { text: "강수/풍속/노면 정보 보고 정밀 판단한다.", scores: { S: 2 } },
+                { text: "데이터 확인 후 코스 감성까지 고려한다.", scores: { S: 1, N: 1 } },
+                { text: "비 오는 풍경 라이딩도 매력이라 본다.", scores: { N: 2 } },
+                { text: "날씨보다 오늘의 컨셉이 더 중요하다.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "정산 때 예상보다 비용이 많이 나오면?",
+            answers: [
+                { text: "항목별로 바로 나누고 기준을 재설정한다.", scores: { T: 2 } },
+                { text: "누가 부담 느끼지 않게 먼저 조율한다.", scores: { F: 2 } },
+                { text: "숫자 정리와 관계 밸런스를 함께 챙긴다.", scores: { T: 1, F: 1 } },
+                { text: "오늘 추억값이라며 분위기 먼저 살린다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "장거리 투어 일정표를 만든다면?",
+            answers: [
+                { text: "연료/식사/휴식 타임까지 분 단위로 짠다.", scores: { J: 2 } },
+                { text: "체크포인트만 정하고 유동적으로 운영한다.", scores: { J: 1, P: 1 } },
+                { text: "현장 컨디션 맞춰 즉흥 조정한다.", scores: { P: 2 } },
+                { text: "길이 부르면 방향도 바뀌는 법이다.", scores: { P: 2 } }
+            ]
+        },
+        {
+            question: "당신에게 라이딩의 핵심 의미는?",
+            answers: [
+                { text: "직접 몸으로 느끼는 노면 감각과 컨트롤.", scores: { S: 2 } },
+                { text: "현실감도 좋고, 영감도 챙기는 밸런스.", scores: { S: 1, N: 1 } },
+                { text: "일상 밖에서 생각을 확장하는 시간.", scores: { N: 2 } },
+                { text: "삶의 장면을 새로 쓰는 의식 같은 것.", scores: { N: 2 } }
+            ]
+        },
+        {
+            question: "팀 라이딩 중 의사결정 충돌이 나면?",
+            answers: [
+                { text: "합리적 기준을 세워 빠르게 결론 낸다.", scores: { T: 2 } },
+                { text: "의견 낸 사람 감정을 먼저 정리해준다.", scores: { F: 2 } },
+                { text: "규칙과 관계 둘 다 지키는 절충안을 낸다.", scores: { T: 1, F: 1 } },
+                { text: "텐션 풀고 모두 납득할 분위기를 만든다.", scores: { F: 2 } }
+            ]
+        },
+        {
+            question: "새벽 번개 라이딩 제안이 오면?",
+            answers: [
+                { text: "\"집결 6:00\" 공지부터 올린다.", scores: { E: 2 } },
+                { text: "딱 맞는 멤버에게만 콕 집어 연락한다.", scores: { E: 1, I: 1 } },
+                { text: "조용히 혼자 출발해 해 뜨는 길을 탄다.", scores: { I: 2 } },
+                { text: "핸들 잡고 생각 정리하는 혼라를 택한다.", scores: { I: 2 } }
+            ]
+        }
+    ];
+}
+
+function createMotorbikeSeedResultSettings() {
+    const settings = createEmptyResultSettings();
+
+    function buildContent(summary, interpretation, pros, cons, matchFirst, matchSecond) {
+        const interpretationHtml = interpretation.map((line) => `<p>${line}</p>`).join("\n");
+        const prosHtml = pros.map((item) => `<li>${item}</li>`).join("");
+        const consHtml = cons.map((item) => `<li>${item}</li>`).join("");
+
+        return `<h3>한 줄 요약</h3>
+<p>${summary}</p>
+
+<br><br>
+<h3>유형 해석</h3>
+${interpretationHtml}
+
+<h4>장점</h4>
+<ul>
+${prosHtml}
+</ul>
+
+<h4>단점</h4>
+<ul>
+${consHtml}
+</ul>
+
+<br><br>
+<h3>나와 잘 맞는 유형</h3>
+<p><strong>1위 : ${matchFirst.title}</strong><br>
+- ${matchFirst.points[0]}<br>
+- ${matchFirst.points[1]}<br>
+- ${matchFirst.points[2]}
+</p>
+
+<p><strong>2위 : ${matchSecond.title}</strong><br>
+- ${matchSecond.points[0]}<br>
+- ${matchSecond.points[1]}<br>
+- ${matchSecond.points[2]}
+</p>`;
+    }
+
+    const templates = {
+        INTJ: { title: "<h2>당신은 INTJ : 코스 아키텍트 라이더 🧭</h2>", summary: "라이딩도 결국 설계의 예술.", interpretation: ["출발 전에 이미 변수와 동선 계산이 끝난 타입입니다.", "안전, 효율, 만족도를 동시에 챙기는 전략형입니다.", "성장 로그를 쌓을수록 더 강해집니다."], pros: ["계획력", "리스크 예측", "장기 성장", "자기 통제"], cons: ["즉흥성 부족", "완벽주의 피로", "타인 페이스 답답함"], first: { title: "ENFP : 바이브 크루 라이더 🌈", points: ["유연성 보완", "현장 텐션 상승", "즐거움 강화"] }, second: { title: "ESFP : 로드 페스티벌러 라이더 🎉", points: ["에너지 충전", "사회적 만족", "스트레스 완화"] } },
+        INTP: { title: "<h2>당신은 INTP : 머신 로직 연구가 라이더 🔬</h2>", summary: "핸들 뒤엔 분석 엔진이 돌아간다.", interpretation: ["주행 데이터와 감각을 연결해 패턴을 찾습니다.", "원리 이해가 되면 실력이 급속 성장합니다.", "혼자 몰입할 때 최고의 퍼포먼스를 냅니다."], pros: ["분석력", "문제 해결", "학습 속도", "객관성"], cons: ["실행 지연", "루틴 유지 약화", "감정 소통 건조"], first: { title: "ENFJ : 팀 케어 디렉터 라이더 🤝", points: ["실행력 보완", "소통 개선", "팀 연결 강화"] }, second: { title: "ESFJ : 투어 매니저 라이더 ☕", points: ["생활 균형", "협업 안정", "피로 분산"] } },
+        ENTJ: { title: "<h2>당신은 ENTJ : 원정 총괄 라이더 🚀</h2>", summary: "코스도 팀도 결과로 이끈다.", interpretation: ["목표를 수치화하고 실행 속도를 끌어올립니다.", "결단력과 운영력이 강한 리더형입니다.", "무계획 상황에서도 판을 빠르게 정리합니다."], pros: ["결단력", "운영력", "추진력", "리더십"], cons: ["압박감 유발", "완급 조절 난점", "휴식 경시"], first: { title: "INFP : 무드 레코더 라이더 🌌", points: ["감정 완충", "의미 회복", "과열 완화"] }, second: { title: "ISFP : 감각 크루저 라이더 🎨", points: ["유연성 보완", "현재 몰입", "현장 여유"] } },
+        ENTP: { title: "<h2>당신은 ENTP : 루트 해커 라이더 ⚡</h2>", summary: "늘 새로운 라인을 발명하는 타입.", interpretation: ["정석보다 변주를 즐기며 빠르게 적응합니다.", "돌발 변수에서 오히려 창의성이 터집니다.", "틀을 깨는 플레이로 분위기를 바꿉니다."], pros: ["창의성", "순발력", "적응력", "분위기 환기"], cons: ["마무리 약화", "지속성 부족", "리스크 과소평가"], first: { title: "ISTJ : 체크리스트 마스터 라이더 📋", points: ["완성도 보완", "누락 방지", "실행 안정"] }, second: { title: "ISFJ : 세이프가드 라이더 🛟", points: ["안전 강화", "페이스 유지", "실수 감소"] } },
+        INFJ: { title: "<h2>당신은 INFJ : 노을 큐레이터 라이더 🌙</h2>", summary: "라이딩을 내면 정비 시간으로 쓰는 타입.", interpretation: ["길 위의 분위기와 사람의 상태를 함께 읽습니다.", "의미 있는 코스에서 몰입도가 크게 올라갑니다.", "깊이 있는 경험을 선호하는 성향입니다."], pros: ["통찰력", "공감력", "몰입도", "관계 품질"], cons: ["감정 소모", "결정 지연", "부담 내재화"], first: { title: "ENTP : 루트 해커 라이더 ⚡", points: ["행동 전환", "신선한 시각", "유쾌함 공급"] }, second: { title: "ESTP : 액션 선두 라이더 🏍️", points: ["실행 속도", "현장 대응", "긴장 완화"] } },
+        INFP: { title: "<h2>당신은 INFP : 시네마 로드 라이더 🎬</h2>", summary: "길 위 감정을 장면으로 저장하는 타입.", interpretation: ["코스의 감성과 의미를 오래 기억합니다.", "진짜 마음이 동할 때 퍼포먼스가 올라갑니다.", "취향이 분명하고 진정성이 강합니다."], pros: ["감수성", "진정성", "개성", "내적 동기"], cons: ["기분 기복", "현실 운영 약화", "비교 민감성"], first: { title: "ENTJ : 원정 총괄 라이더 🚀", points: ["목표 선명화", "실행 구조", "지속 성장"] }, second: { title: "ESTJ : 스케줄 오피서 라이더 ⏱️", points: ["루틴 강화", "완수율 향상", "부담 경감"] } },
+        ENFJ: { title: "<h2>당신은 ENFJ : 크루 하모나이저 라이더 🤝</h2>", summary: "팀 밸런스를 맞추는 분위기 설계자.", interpretation: ["누가 지쳤는지 먼저 보고 페이스를 조율합니다.", "팀 만족도와 안전을 함께 챙기는 강점이 있습니다.", "사람 중심 운영 능력이 뛰어납니다."], pros: ["조율력", "동기 부여", "협업 능력", "갈등 완화"], cons: ["과한 책임감", "자기 회복 지연", "거절 어려움"], first: { title: "INTP : 머신 로직 연구가 라이더 🔬", points: ["분석 보완", "전략 정교화", "객관성 강화"] }, second: { title: "ISTP : 피트크루 테크 라이더 🔧", points: ["실전 기술", "즉시 해결", "실행 효율"] } },
+        ENFP: { title: "<h2>당신은 ENFP : 바이브 크루 라이더 🌈</h2>", summary: "라이딩을 이벤트로 만드는 에너자이저.", interpretation: ["새로운 장소와 사람에서 에너지를 얻습니다.", "현장 텐션을 끌어올려 팀 분위기를 살립니다.", "재미와 성장을 함께 찾는 재능이 있습니다."], pros: ["친화력", "회복 탄력성", "도전성", "창의 분위기"], cons: ["집중 분산", "우선순위 변동", "루틴 약화"], first: { title: "INTJ : 코스 아키텍트 라이더 🧭", points: ["구조화 보완", "우선순위 정리", "지속성 강화"] }, second: { title: "ISTJ : 체크리스트 마스터 라이더 📋", points: ["디테일 보완", "누락 방지", "완수력 향상"] } },
+        ISTJ: { title: "<h2>당신은 ISTJ : 체크리스트 마스터 라이더 📋</h2>", summary: "준비력으로 사고 확률을 낮추는 타입.", interpretation: ["정석과 기본기를 충실히 지키는 안정형입니다.", "반복 훈련으로 일관된 실력을 만듭니다.", "팀에서 신뢰도가 높은 운영형 라이더입니다."], pros: ["준비 철저", "안정성", "책임감", "재현성"], cons: ["변화 대응 지연", "즉흥성 부족", "표현이 건조할 수 있음"], first: { title: "ENTP : 루트 해커 라이더 ⚡", points: ["신선한 시각", "유연성 보완", "재미 확장"] }, second: { title: "ENFP : 바이브 크루 라이더 🌈", points: ["에너지 보완", "분위기 개선", "사회적 만족"] } },
+        ISFJ: { title: "<h2>당신은 ISFJ : 세이프가드 라이더 🛟</h2>", summary: "모두가 무사히 돌아오게 만드는 타입.", interpretation: ["작은 위험 신호를 먼저 감지해 대응합니다.", "팀원 컨디션과 안전을 세심하게 챙깁니다.", "안정적인 주행 문화를 만드는 핵심 인력입니다."], pros: ["안전 감각", "배려", "지속성", "신뢰 형성"], cons: ["자기 요구 후순위", "책임 과부하", "새 환경 긴장"], first: { title: "ESTP : 액션 선두 라이더 🏍️", points: ["기동력 보완", "도전 범위 확장", "실전 자신감"] }, second: { title: "ENTP : 루트 해커 라이더 ⚡", points: ["고정 루틴 환기", "창의성 강화", "새 경험 유도"] } },
+        ESTJ: { title: "<h2>당신은 ESTJ : 스케줄 오피서 라이더 ⏱️</h2>", summary: "운영력으로 투어 품질을 끌어올리는 타입.", interpretation: ["역할 분배와 시간 관리에 강한 실무형입니다.", "현장 리소스를 빠르게 정리해 완수율을 높입니다.", "행사형 라이딩에서 존재감이 큽니다."], pros: ["운영력", "완수율", "판단 속도", "리더십"], cons: ["유연성 부족", "속도 압박", "느린 템포 답답함"], first: { title: "ISFP : 감각 크루저 라이더 🎨", points: ["여유 보완", "무드 강화", "긴장 완화"] }, second: { title: "INFP : 시네마 로드 라이더 🎬", points: ["공감 확장", "의미 보완", "분위기 완화"] } },
+        ESFJ: { title: "<h2>당신은 ESFJ : 투어 매니저 라이더 ☕</h2>", summary: "팀 만족도를 끝까지 챙기는 타입.", interpretation: ["사람 중심으로 일정과 분위기를 균형 있게 맞춥니다.", "모두가 불편하지 않도록 디테일을 챙깁니다.", "협업형 라이딩에서 강점을 보입니다."], pros: ["소통력", "협업 적응", "현장 케어", "팀워크 강화"], cons: ["평가 민감", "배려 과부하", "타인 기준 우선"], first: { title: "INTP : 머신 로직 연구가 라이더 🔬", points: ["분석 보완", "효율 개선", "객관성 강화"] }, second: { title: "INTJ : 코스 아키텍트 라이더 🧭", points: ["장기 구조", "우선순위", "실행 체계"] } },
+        ISTP: { title: "<h2>당신은 ISTP : 피트크루 테크 라이더 🔧</h2>", summary: "문제 생기면 가장 먼저 찾는 해결사.", interpretation: ["현장 이슈를 빠르게 읽고 실전으로 해결합니다.", "손으로 익힌 감각을 즉시 적용하는 데 강합니다.", "말보다 결과로 신뢰를 얻는 타입입니다."], pros: ["현장 대응", "기술 습득", "침착함", "해결 효율"], cons: ["감정 표현 부족", "장기 계획 지연", "루틴 지루함"], first: { title: "ENFJ : 크루 하모나이저 라이더 🤝", points: ["소통 보완", "팀 조화", "정서 회복"] }, second: { title: "ESFJ : 투어 매니저 라이더 ☕", points: ["리듬 안정", "협업 완화", "지속성 강화"] } },
+        ISFP: { title: "<h2>당신은 ISFP : 감각 크루저 라이더 🎨</h2>", summary: "길 위 감각을 가장 섬세하게 타는 타입.", interpretation: ["현재 순간의 노면/바람 감각을 잘 읽습니다.", "스타일과 무드가 분명해 개성이 강합니다.", "무리 없이 오래 즐기는 감각형 라이더입니다."], pros: ["감각 표현", "유연 대응", "공간 연출", "몰입도"], cons: ["체계 기록 부족", "기분 영향 큼", "목표 느슨 가능"], first: { title: "ESTJ : 스케줄 오피서 라이더 ⏱️", points: ["루틴 보완", "구조 강화", "성장 추적"] }, second: { title: "ENTJ : 원정 총괄 라이더 🚀", points: ["도전 확장", "성과 명확화", "추진력 강화"] } },
+        ESTP: { title: "<h2>당신은 ESTP : 액션 선두 라이더 🏍️</h2>", summary: "현장 변수에서 더 빛나는 실전형.", interpretation: ["판단과 실행 전환이 매우 빠릅니다.", "변수 많은 코스에서 오히려 강해집니다.", "팀 텐션을 끌어올리는 추진형입니다."], pros: ["순발력", "적응력", "결단 속도", "에너지"], cons: ["계획 누락", "리스크 경시", "반복 루틴 회피"], first: { title: "ISFJ : 세이프가드 라이더 🛟", points: ["안전 밸런스", "페이스 안정", "지속 성장"] }, second: { title: "INFJ : 노을 큐레이터 라이더 🌙", points: ["깊은 복기", "감정 완화", "의미 확장"] } },
+        ESFP: { title: "<h2>당신은 ESFP : 로드 페스티벌러 라이더 🎉</h2>", summary: "어색한 공기도 한 방에 녹이는 타입.", interpretation: ["사람과 길을 즐겁게 연결하는 재능이 있습니다.", "즉흥 센스로 현장 분위기를 끌어올립니다.", "즐기는 힘이 커서 회복 탄력성이 좋습니다."], pros: ["친화력", "현장 에너지", "적응력", "회복 탄력"], cons: ["장기 계획 약화", "집중 분산", "흥미 중심 선택"], first: { title: "INTJ : 코스 아키텍트 라이더 🧭", points: ["계획 보완", "우선순위 강화", "성과 추적"] }, second: { title: "ISTJ : 체크리스트 마스터 라이더 📋", points: ["루틴 안정", "기본기 강화", "반복 실수 감소"] } }
+    };
+
+    MBTI_RESULT_TYPES.forEach((mbti) => {
+        const item = templates[mbti];
+        if (!item) {
+            return;
+        }
+        settings[mbti].title = item.title;
+        settings[mbti].content = buildContent(
+            item.summary,
+            item.interpretation,
+            item.pros,
+            item.cons,
+            item.first,
+            item.second
+        );
+    });
+
+    return settings;
+}
+
 function removeH2BlocksFromHtml(raw) {
     return String(raw || "")
         .replace(/<h2\b[^>]*>[\s\S]*?<\/h2>\s*/gi, "")
         .trim();
 }
 
-function sanitizeResultSettingsWithoutH2(rawSettings) {
+function normalizeResultContentHtml(raw) {
+    let content = removeH2BlocksFromHtml(raw);
+
+    content = content.replace(
+        /(?:<br\s*\/?>\s*)*<h[34][^>]*>\s*유형\s*해석\s*<\/h[34]>\s*/gi,
+        "<br><br>\n<h3>유형 해석</h3>\n"
+    );
+    content = content.replace(
+        /(?:<br\s*\/?>\s*)*<h[34][^>]*>\s*나와\s*잘\s*맞는\s*(?:유형|러너|서퍼|캠퍼)\s*<\/h[34]>\s*/gi,
+        "<br><br>\n<h3>나와 잘 맞는 유형</h3>\n"
+    );
+
+    return content.trim();
+}
+
+function sanitizeResultSettingsForLegacyFormat(rawSettings) {
     const normalized = normalizeResultSettings(rawSettings);
     let changed = false;
 
     MBTI_RESULT_TYPES.forEach((mbti) => {
         const current = String(normalized[mbti].content || "");
-        const sanitized = removeH2BlocksFromHtml(current);
+        const sanitized = normalizeResultContentHtml(current);
         if (current !== sanitized) {
             normalized[mbti].content = sanitized;
             changed = true;
@@ -2055,7 +2293,7 @@ function sanitizeResultSettingsWithoutH2(rawSettings) {
     return { changed, resultSettings: normalized };
 }
 
-async function ensureRunningAndSurfingResultContentCleanup() {
+async function ensureLegacyResultContentCleanup() {
     if (!isDbReady) {
         return;
     }
@@ -2065,6 +2303,9 @@ async function ensureRunningAndSurfingResultContentCleanup() {
         { field: "seedKey", value: SURFING_TEST_SEED_KEY },
         { field: "title", value: "서핑 MBTI 테스트" },
         { field: "cardTitle", value: "서핑 MBTI 테스트" },
+        { field: "seedKey", value: CAMPING_TEST_SEED_KEY },
+        { field: "title", value: "캠핑 MBTI 테스트" },
+        { field: "cardTitle", value: "캠핑 MBTI 테스트" },
         { field: "title", value: "러닝 MBTI 테스트" },
         { field: "cardTitle", value: "러닝 MBTI 테스트" }
     ];
@@ -2079,7 +2320,7 @@ async function ensureRunningAndSurfingResultContentCleanup() {
                 seen.add(doc.id);
 
                 const data = doc.data() || {};
-                const sanitized = sanitizeResultSettingsWithoutH2(data.resultSettings);
+                const sanitized = sanitizeResultSettingsForLegacyFormat(data.resultSettings);
                 if (!sanitized.changed) {
                     continue;
                 }
@@ -2100,7 +2341,7 @@ async function ensureRunningAndSurfingResultContentCleanup() {
                 });
             }
         } catch (error) {
-            console.error("결과 화면 내용 h2 정리 실패:", target, error);
+            console.error("결과 화면 내용 포맷 정리 실패:", target, error);
         }
     }
 }
@@ -2240,6 +2481,52 @@ async function ensureCampingMbtiTest() {
         });
     } catch (error) {
         console.error("캠핑 MBTI 테스트 자동 등록 실패:", error);
+    }
+}
+
+async function ensureMotorbikeMbtiTest() {
+    if (!isAuthReady) {
+        return;
+    }
+
+    const seedQuestions = getMotorbikeSeedQuestions();
+    if (seedQuestions.length !== 15) {
+        return;
+    }
+
+    try {
+        const existing = await db.collection("tests").where("seedKey", "==", MOTORBIKE_TEST_SEED_KEY).limit(1).get();
+        if (!existing.empty) {
+            return;
+        }
+
+        const seedResultSettings = createMotorbikeSeedResultSettings();
+        const mbtiDescriptions = MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+            const content = String(seedResultSettings[mbti] && seedResultSettings[mbti].content || "").trim();
+            if (content) {
+                acc[mbti] = content;
+            }
+            return acc;
+        }, {});
+
+        await db.collection("tests").add({
+            seedKey: MOTORBIKE_TEST_SEED_KEY,
+            title: "오토바이 라이딩 MBTI 테스트",
+            cardTitle: "오토바이 라이딩 MBTI 테스트",
+            navTitle: "나는 어떤 라이더일까?",
+            isRecommended: true,
+            viewCount: 0,
+            thumbnail: "",
+            resultSettings: seedResultSettings,
+            questions: seedQuestions,
+            mbtiDescriptions,
+            isPublished: true,
+            createdById: ADMIN_ID,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        console.error("오토바이 라이딩 MBTI 테스트 자동 등록 실패:", error);
     }
 }
 
@@ -2448,9 +2735,10 @@ if (resultContentInputEl) {
         if (authorized) {
             setLoginError("");
             await ensureDefaultMbtiTest();
-            await ensureRunningAndSurfingResultContentCleanup();
+            await ensureLegacyResultContentCleanup();
             await ensureSurfingMbtiTest();
             await ensureCampingMbtiTest();
+            await ensureMotorbikeMbtiTest();
             state.currentPage = 1;
             await loadTestList();
             return;
