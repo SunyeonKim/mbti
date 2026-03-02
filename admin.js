@@ -2500,7 +2500,10 @@ const RESULT_IMAGE_THEME_BY_SEED_KEY = {
 
 function getResultImageBaseUrl() {
     if (typeof window !== "undefined" && window.location && window.location.origin) {
-        return `${window.location.origin}/mbti/resource/result-images`;
+        const pathname = String(window.location.pathname || "");
+        const useMbtiPrefix = pathname === "/mbti" || pathname.startsWith("/mbti/");
+        const prefix = useMbtiPrefix ? "/mbti" : "";
+        return `${window.location.origin}${prefix}/resource/result-images`;
     }
     return "https://sunyeonkim.github.io/mbti/resource/result-images";
 }
@@ -2531,6 +2534,11 @@ function buildResultImageUrl(themeSlug, mbti) {
     return `${getResultImageBaseUrl()}/${themeSlug}/${mbti}.svg`;
 }
 
+function isManagedResultImageUrl(url) {
+    const value = String(url || "").trim();
+    return value.includes("/resource/result-images/") && value.toLowerCase().endsWith(".svg");
+}
+
 function withDefaultResultImages(rawSettings, testData) {
     const themeSlug = inferThemeSlugFromTest(testData);
     const normalized = normalizeResultSettings(rawSettings);
@@ -2540,7 +2548,8 @@ function withDefaultResultImages(rawSettings, testData) {
     MBTI_RESULT_TYPES.forEach((mbti) => {
         const currentImage = String(next[mbti] && next[mbti].image || "").trim();
         const fallbackUrl = buildResultImageUrl(themeSlug, mbti);
-        if (!currentImage) {
+        const shouldReplaceManaged = currentImage && isManagedResultImageUrl(currentImage) && currentImage !== fallbackUrl;
+        if (!currentImage || shouldReplaceManaged) {
             next[mbti].image = fallbackUrl;
             changed = true;
         }
