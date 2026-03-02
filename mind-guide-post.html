@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>마음 사용 설명서 | 모두의 테스트</title>
-    <meta name="description" content="MBTI를 더 깊이 이해하기 위한 마음 사용 설명서 게시판 목록">
+    <title>마음 사용 설명서 상세 | 모두의 테스트</title>
+    <meta name="description" content="마음 사용 설명서 상세 글">
     <meta name="robots" content="index,follow,max-image-preview:large">
-    <link rel="canonical" href="https://sunyeonkim.github.io/mbti/mind-guide.html">
     <meta property="og:site_name" content="모두의 테스트">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="마음 사용 설명서">
-    <meta property="og:description" content="심리 해설, 관계 패턴, 생산성 분석까지 15개 아티클">
-    <meta property="og:url" content="https://sunyeonkim.github.io/mbti/mind-guide.html">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="마음 사용 설명서 상세">
+    <meta property="og:description" content="MBTI 기반 심리 해설 상세 글">
     <meta property="og:image" content="https://sunyeonkim.github.io/mbti/resource/og-default.svg">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -53,12 +51,11 @@
 
     <main class="page-main">
         <div class="container wide-container">
-            <section class="mind-board-intro">
-                <h1>마음 사용 설명서</h1>
-                <p class="sub-copy">MBTI를 더 정확하고 실용적으로 이해하기 위한 아티클 15선</p>
-            </section>
-            <section>
-                <div id="mind-guide-list" class="mind-board-grid" aria-label="마음 사용 설명서 글 목록"></div>
+            <section id="post-detail" class="mind-post-detail">
+                <a href="mind-guide.html" class="primary-link">← 목록으로</a>
+                <h1 id="post-title">마음 사용 설명서</h1>
+                <div id="post-meta" class="mind-guide-meta"></div>
+                <div id="post-content" class="mind-post-content"></div>
             </section>
         </div>
     </main>
@@ -84,7 +81,9 @@
             const navOverlayEl = document.getElementById("nav-overlay");
             const sideNavEl = document.getElementById("side-nav");
             const languageSelectEl = document.getElementById("language-select");
-            const listEl = document.getElementById("mind-guide-list");
+            const postTitleEl = document.getElementById("post-title");
+            const postMetaEl = document.getElementById("post-meta");
+            const postContentEl = document.getElementById("post-content");
 
             function applyTheme(theme) {
                 document.body.setAttribute("data-theme", theme);
@@ -112,32 +111,27 @@
                 navToggleBtn.setAttribute("aria-expanded", "false");
             }
 
-            function renderList() {
+            function getPostFromQuery() {
                 const posts = Array.isArray(window.MIND_GUIDE_POSTS) ? window.MIND_GUIDE_POSTS : [];
-                if (!listEl) return;
-                listEl.innerHTML = "";
-                posts.forEach((post) => {
-                    const card = document.createElement("a");
-                    card.className = "test-card mind-guide-card";
-                    card.href = `mind-guide-post.html?post=${encodeURIComponent(post.slug)}`;
-                    card.innerHTML = `
-                        <div class="recent-result-body">
-                            <p class="mind-guide-card-category">${post.category || "마음 사용 설명서"}</p>
-                            <p class="mind-guide-card-title">${post.title}</p>
-                            <p class="mind-guide-card-summary">${post.summary || ""}</p>
-                            <div class="mind-guide-meta">
-                                <span>${post.readTime || ""}</span>
-                                <span>${post.updatedAt || ""}</span>
-                            </div>
-                        </div>`;
-                    listEl.appendChild(card);
-                });
+                const slug = new URLSearchParams(window.location.search).get("post");
+                return posts.find((item) => item.slug === slug) || posts[0] || null;
+            }
+
+            function renderPost() {
+                const post = getPostFromQuery();
+                if (!post) return;
+                if (postTitleEl) postTitleEl.textContent = post.title;
+                if (postMetaEl) {
+                    postMetaEl.innerHTML = `<span>${post.category || "마음 사용 설명서"}</span><span>${post.readTime || ""}</span><span>${post.updatedAt || ""}</span>`;
+                }
+                if (postContentEl) postContentEl.innerHTML = post.contentHtml || "";
+                document.title = `${post.title} | 마음 사용 설명서`;
             }
 
             const savedTheme = localStorage.getItem("theme")
                 || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
             applyTheme(savedTheme);
-            renderList();
+            renderPost();
 
             if (themeToggleBtn) {
                 themeToggleBtn.addEventListener("click", () => {

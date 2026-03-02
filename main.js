@@ -49,23 +49,6 @@ const toastEl = document.getElementById("toast");
 const RECENT_RESULTS_STORAGE_KEY = "recentTestResultsV1";
 const MAX_RECENT_RESULTS = 5;
 const DRAG_SCROLL_THRESHOLD = 5;
-const MIND_GUIDE_POSTS = [
-    { slug: "mbti-science-truth", title: "MBTI는 과학일까? 심리학자가 말하는 MBTI의 진실" },
-    { slug: "mbti-test-principles", title: "MBTI 검사 원리 완전 해부: 16가지 유형은 어떻게 만들어질까?" },
-    { slug: "mbti-vs-big5", title: "MBTI와 Big5 성격이론 비교: 무엇이 더 신뢰할 수 있을까?" },
-    { slug: "free-vs-paid-mbti", title: "무료 MBTI 검사와 유료 검사의 차이점 (정확도 실험)" },
-    { slug: "why-mbti-results-change", title: "MBTI 결과가 매번 다르게 나오는 이유" },
-    { slug: "mbti-compatibility-data", title: "MBTI 궁합은 진짜 맞을까? 실제 커플 데이터 분석" },
-    { slug: "infp-love-pain-pattern", title: "INFP가 연애에서 상처받는 진짜 이유" },
-    { slug: "estj-love-difficulty-pattern", title: "ESTJ가 연애할 때 어려움을 겪는 패턴" },
-    { slug: "mbti-contact-styles", title: "MBTI별 연락 스타일 총정리" },
-    { slug: "breakup-reaction-by-type", title: "헤어질 때 유형별 반응 차이" },
-    { slug: "e-i-energy-recovery", title: "E와 I의 진짜 차이: 사람 만나는 횟수가 아니라 에너지 회복 방식이다" },
-    { slug: "t-f-decision-structure", title: "T와 F는 공감 능력 차이가 아니다 - 의사결정 구조 분석" },
-    { slug: "j-p-productivity", title: "J와 P의 생산성 차이: 시간관리 방식 비교 실험" },
-    { slug: "n-idea-execution-gap", title: "N형이 아이디어는 많은데 실행을 못 하는 이유" },
-    { slug: "s-practical-strength", title: "S형이 현실에서 강한 이유 (업무 능력 분석)" }
-];
 
 const isTestPage = Boolean(
     questionEl
@@ -552,19 +535,45 @@ function getRandomItems(items, count) {
     return copied.slice(0, Math.max(0, count));
 }
 
+function getMindGuidePosts() {
+    const posts = window.MIND_GUIDE_POSTS;
+    return Array.isArray(posts) ? posts : [];
+}
+
 function renderMindGuideRecommendations() {
     if (!mindGuideRecommendationsEl) {
         return;
     }
     mindGuideRecommendationsEl.innerHTML = "";
 
-    const recommended = getRandomItems(MIND_GUIDE_POSTS, 5);
+    const recommended = getRandomItems(getMindGuidePosts(), 5);
     recommended.forEach((post) => {
-        const link = document.createElement("a");
-        link.className = "mind-guide-link";
-        link.href = `mind-guide.html#${post.slug}`;
-        link.textContent = post.title;
-        mindGuideRecommendationsEl.appendChild(link);
+        const card = document.createElement("a");
+        card.className = "test-card recent-result-card carousel-card mind-guide-card";
+        card.href = `mind-guide-post.html?post=${encodeURIComponent(post.slug)}`;
+
+        const body = document.createElement("div");
+        body.className = "recent-result-body";
+
+        const category = document.createElement("p");
+        category.className = "mind-guide-card-category";
+        category.textContent = post.category || "마음 사용 설명서";
+
+        const title = document.createElement("p");
+        title.className = "mind-guide-card-title";
+        title.textContent = post.title;
+
+        const summary = document.createElement("p");
+        summary.className = "mind-guide-card-summary";
+        summary.textContent = buildRecentCardSummary(post.summary || "", 95);
+
+        const meta = document.createElement("div");
+        meta.className = "mind-guide-meta";
+        meta.innerHTML = `<span>${post.readTime || "읽기 6분"}</span><span>${post.updatedAt || ""}</span>`;
+
+        body.append(category, title, summary, meta);
+        card.appendChild(body);
+        mindGuideRecommendationsEl.appendChild(card);
     });
 }
 
