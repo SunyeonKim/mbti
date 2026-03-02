@@ -1,6 +1,7 @@
 const MBTI_KEYS = ["E", "I", "S", "N", "T", "F", "J", "P"];
 
 const questionEl = document.getElementById("question");
+const questionScenarioEl = document.getElementById("question-scenario");
 const answersEl = document.getElementById("answers");
 const prevBtn = document.getElementById("prev-btn");
 const nextBtn = document.getElementById("next-btn");
@@ -135,6 +136,8 @@ function getLangPack() {
 function buildFallbackTest() {
     const langPack = getLangPack();
     const questions = (langPack.questions || []).map((question) => ({
+        scenario: String(question.scenario || "").trim(),
+        scenarioEn: String(question.scenarioEn || "").trim(),
         question: question.question,
         answers: (question.answers || []).slice(0, 4).map((answer) => ({
             text: answer.text,
@@ -196,6 +199,8 @@ function sanitizeRemoteTest(doc) {
             }
 
             return {
+                scenario: String(question.scenario || "").trim(),
+                scenarioEn: String(question.scenarioEn || "").trim(),
                 question: String(question.question).trim(),
                 questionEn: String(question.questionEn || "").trim(),
                 answers: normalizedAnswers
@@ -225,6 +230,13 @@ function sanitizeRemoteTest(doc) {
         isFallback: false,
         createdAtMs: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : 0
     };
+}
+
+function buildQuestionScenario(testTitle, questionTitle, questionIndex) {
+    const title = String(testTitle || "테스트").trim();
+    const question = String(questionTitle || "").trim();
+    const sceneStep = Number(questionIndex) + 1;
+    return `${sceneStep}번째 장면: ${title}를 진행하는 상황입니다. ${question} 이 순간, 당신은 어떤 선택을 할까요?`;
 }
 
 function getLocalizedText(ko, en) {
@@ -1113,6 +1125,11 @@ function showQuestion() {
     }
 
     const currentQuestion = currentTest.questions[currentQuestionIndex];
+    if (questionScenarioEl) {
+        const localizedScenario = getLocalizedText(currentQuestion.scenario, currentQuestion.scenarioEn);
+        questionScenarioEl.textContent = localizedScenario
+            || buildQuestionScenario(getLocalizedTestTitle(currentTest), getLocalizedText(currentQuestion.question, currentQuestion.questionEn), currentQuestionIndex);
+    }
     questionEl.textContent = getLocalizedText(currentQuestion.question, currentQuestion.questionEn);
     answersEl.innerHTML = "";
 

@@ -77,132 +77,150 @@
                         <button id="back-to-list-btn" type="button">목록으로</button>
                     </div>
 
-                    <section class="admin-section-block">
-                        <h2>기본 설정</h2>
-                        <div class="admin-grid two-col">
-                            <label>
-                                테스트 제목
-                                <input id="test-title" type="text" placeholder="예: 직장인 공감 MBTI">
-                            </label>
-                            <label>
-                                카드 제목
-                                <input id="card-title" type="text" placeholder="메인 카드에 표시될 제목">
-                            </label>
-                            <label class="admin-checkbox-label">
-                                <input id="is-recommended" type="checkbox">
-                                홈 추천
-                            </label>
-                            <fieldset class="admin-radio-group">
-                                <legend>노출 여부</legend>
-                                <label>
-                                    <input type="radio" name="publish-state" id="publish-visible" value="visible" checked>
-                                    노출
-                                </label>
-                                <label>
-                                    <input type="radio" name="publish-state" id="publish-hidden" value="hidden">
-                                    숨김
-                                </label>
-                            </fieldset>
-                        </div>
+                    <section class="admin-editor-tabs" aria-label="테스트 편집 탭">
+                        <button id="admin-tab-basic" type="button" class="admin-tab active" data-admin-tab="basic">기본 설정</button>
+                        <button id="admin-tab-questions" type="button" class="admin-tab" data-admin-tab="questions">문항 설정</button>
+                        <button id="admin-tab-results" type="button" class="admin-tab" data-admin-tab="results">결과 설정</button>
+                    </section>
 
-                        <div class="admin-grid two-col image-upload-block">
-                            <label>
-                                카드 썸네일 이미지
-                                <input id="card-thumbnail-input" type="file" accept="image/*">
-                                <small class="field-hint">권장 이미지 사이즈: 1200 x 630px (JPG/PNG)</small>
-                            </label>
-                            <div class="image-preview-wrap">
-                                <p>썸네일 미리보기</p>
-                                <img id="card-thumbnail-preview" alt="thumbnail preview" hidden>
+                    <section id="admin-panel-basic" class="admin-tab-panel">
+                        <section class="admin-section-block">
+                            <h2>기본 설정</h2>
+                            <div class="admin-grid two-col">
+                                <label>
+                                    테스트 제목
+                                    <input id="test-title" type="text" placeholder="예: 직장인 공감 MBTI">
+                                </label>
+                                <label>
+                                    카드 제목
+                                    <input id="card-title" type="text" placeholder="메인 카드에 표시될 제목">
+                                </label>
+                                <label class="admin-checkbox-label">
+                                    <input id="is-recommended" type="checkbox">
+                                    홈 추천
+                                </label>
+                                <fieldset class="admin-radio-group">
+                                    <legend>노출 여부</legend>
+                                    <label>
+                                        <input type="radio" name="publish-state" id="publish-visible" value="visible" checked>
+                                        노출
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="publish-state" id="publish-hidden" value="hidden">
+                                        숨김
+                                    </label>
+                                </fieldset>
                             </div>
+
+                            <div class="admin-grid two-col image-upload-block">
+                                <label>
+                                    카드 썸네일 이미지
+                                    <input id="card-thumbnail-input" type="file" accept="image/*">
+                                    <small class="field-hint">권장 이미지 사이즈: 1200 x 630px (JPG/PNG)</small>
+                                </label>
+                                <div class="image-preview-wrap">
+                                    <p>썸네일 미리보기</p>
+                                    <img id="card-thumbnail-preview" alt="thumbnail preview" hidden>
+                                </div>
+                            </div>
+                        </section>
+                        <div class="admin-actions">
+                            <button id="save-basic-btn" type="button">기본 설정 저장</button>
                         </div>
                     </section>
 
-                    <hr class="admin-section-divider">
+                    <section id="admin-panel-questions" class="admin-tab-panel" hidden>
+                        <section class="admin-section-block">
+                            <div class="admin-top-row">
+                                <h2>문항 설정</h2>
+                                <button id="add-question-btn" type="button">문항 추가</button>
+                            </div>
+                            <p id="question-count-label">현재 문항 수: 0</p>
+                            <div id="question-list" class="question-list"></div>
+                        </section>
 
-                    <section class="admin-section-block">
-                        <div class="admin-top-row">
-                            <h2>문항 설정</h2>
-                            <button id="add-question-btn" type="button">문항 추가</button>
+                        <section class="mbti-weight-guide">
+                            <h2>MBTI 가중치 참고</h2>
+                            <p>각 답변 선택지마다 최대 2개의 MBTI 요소와 점수 가중치를 지정할 수 있습니다.</p>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>유형</th>
+                                        <th>의미</th>
+                                        <th>권장 점수 예시</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>E</td><td>외향</td><td>+1 또는 +2</td></tr>
+                                    <tr><td>I</td><td>내향</td><td>+1 또는 +2</td></tr>
+                                    <tr><td>N</td><td>직관</td><td>+1 또는 +2</td></tr>
+                                    <tr><td>S</td><td>감각</td><td>+1 또는 +2</td></tr>
+                                    <tr><td>T</td><td>사고</td><td>+1 또는 +2</td></tr>
+                                    <tr><td>F</td><td>감정</td><td>+1 또는 +2</td></tr>
+                                    <tr><td>J</td><td>판단</td><td>+1 또는 +2</td></tr>
+                                    <tr><td>P</td><td>인식</td><td>+1 또는 +2</td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+
+                        <div class="admin-actions">
+                            <button id="save-questions-btn" type="button">문항 설정 저장</button>
                         </div>
-                        <p id="question-count-label">현재 문항 수: 0</p>
-                        <div id="question-list" class="question-list"></div>
                     </section>
 
-                    <hr class="admin-section-divider">
-
-                    <section class="admin-section-block">
-                        <h2>결과 설정</h2>
-                        <div class="admin-grid two-col result-config-grid">
-                            <label>
-                                MBTI 유형 선택
-                                <select id="result-mbti-select">
-                                    <option value="INTJ">INTJ</option>
-                                    <option value="INTP">INTP</option>
-                                    <option value="ENTJ">ENTJ</option>
-                                    <option value="ENTP">ENTP</option>
-                                    <option value="INFJ">INFJ</option>
-                                    <option value="INFP">INFP</option>
-                                    <option value="ENFJ">ENFJ</option>
-                                    <option value="ENFP">ENFP</option>
-                                    <option value="ISTJ">ISTJ</option>
-                                    <option value="ISFJ">ISFJ</option>
-                                    <option value="ESTJ">ESTJ</option>
-                                    <option value="ESFJ">ESFJ</option>
-                                    <option value="ISTP">ISTP</option>
-                                    <option value="ISFP">ISFP</option>
-                                    <option value="ESTP">ESTP</option>
-                                    <option value="ESFP">ESFP</option>
-                                </select>
-                            </label>
-                            <label>
-                                결과 화면 제목
-                                <input id="result-title-input" type="text" placeholder="예: 전략가형 INTJ">
-                            </label>
-                            <label class="full-width">
-                                결과 화면 내용
-                                <textarea id="result-content-input" rows="5" placeholder="해당 유형의 결과 안내 내용을 입력해 주세요."></textarea>
-                            </label>
-                            <label>
-                                결과 화면 이미지
-                                <input id="result-image-input" type="file" accept="image/*">
-                                <small class="field-hint">권장 이미지 사이즈: 1200 x 630px (JPG/PNG)</small>
-                            </label>
-                            <div class="image-preview-wrap">
-                                <p>결과 이미지 미리보기</p>
-                                <img id="result-image-preview" alt="result preview" hidden>
+                    <section id="admin-panel-results" class="admin-tab-panel" hidden>
+                        <section class="admin-section-block">
+                            <h2>결과 설정</h2>
+                            <div class="admin-grid two-col result-config-grid">
+                                <label>
+                                    MBTI 유형 선택
+                                    <select id="result-mbti-select">
+                                        <option value="INTJ">INTJ</option>
+                                        <option value="INTP">INTP</option>
+                                        <option value="ENTJ">ENTJ</option>
+                                        <option value="ENTP">ENTP</option>
+                                        <option value="INFJ">INFJ</option>
+                                        <option value="INFP">INFP</option>
+                                        <option value="ENFJ">ENFJ</option>
+                                        <option value="ENFP">ENFP</option>
+                                        <option value="ISTJ">ISTJ</option>
+                                        <option value="ISFJ">ISFJ</option>
+                                        <option value="ESTJ">ESTJ</option>
+                                        <option value="ESFJ">ESFJ</option>
+                                        <option value="ISTP">ISTP</option>
+                                        <option value="ISFP">ISFP</option>
+                                        <option value="ESTP">ESTP</option>
+                                        <option value="ESFP">ESFP</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    결과 화면 제목
+                                    <input id="result-title-input" type="text" placeholder="예: 전략가형 INTJ">
+                                </label>
+                                <label class="full-width">
+                                    결과 화면 내용
+                                    <textarea id="result-content-input" rows="5" placeholder="해당 유형의 결과 안내 내용을 입력해 주세요."></textarea>
+                                </label>
+                                <label>
+                                    결과 화면 이미지
+                                    <input id="result-image-input" type="file" accept="image/*">
+                                    <small class="field-hint">권장 이미지 사이즈: 1200 x 630px (JPG/PNG)</small>
+                                </label>
+                                <div class="image-preview-wrap">
+                                    <p>결과 이미지 미리보기</p>
+                                    <img id="result-image-preview" alt="result preview" hidden>
+                                </div>
                             </div>
+                        </section>
+
+                        <div class="admin-actions">
+                            <button id="save-results-btn" type="button">결과 설정 저장</button>
                         </div>
                     </section>
 
                     <div class="admin-actions">
-                        <button id="save-test-btn" type="button">등록</button>
                         <p id="admin-save-status"></p>
                     </div>
-
-                    <section class="mbti-weight-guide">
-                        <h2>MBTI 가중치 참고</h2>
-                        <p>각 답변 선택지마다 최대 2개의 MBTI 요소와 점수 가중치를 지정할 수 있습니다.</p>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>유형</th>
-                                    <th>의미</th>
-                                    <th>권장 점수 예시</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td>E</td><td>외향</td><td>+1 또는 +2</td></tr>
-                                <tr><td>I</td><td>내향</td><td>+1 또는 +2</td></tr>
-                                <tr><td>N</td><td>직관</td><td>+1 또는 +2</td></tr>
-                                <tr><td>S</td><td>감각</td><td>+1 또는 +2</td></tr>
-                                <tr><td>T</td><td>사고</td><td>+1 또는 +2</td></tr>
-                                <tr><td>F</td><td>감정</td><td>+1 또는 +2</td></tr>
-                                <tr><td>J</td><td>판단</td><td>+1 또는 +2</td></tr>
-                                <tr><td>P</td><td>인식</td><td>+1 또는 +2</td></tr>
-                            </tbody>
-                        </table>
-                    </section>
                 </section>
             </section>
         </div>

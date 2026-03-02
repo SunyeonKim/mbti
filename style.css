@@ -648,6 +648,16 @@ a.test-card {
     margin-bottom: 1rem;
 }
 
+#question-scenario {
+    margin: 0 0 0.7rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: var(--answer-bg);
+    line-height: 1.6;
+    font-size: 0.96rem;
+}
+
 #answers button {
     display: block;
     width: 100%;
@@ -679,7 +689,9 @@ a.test-card {
 #admin-logout-btn,
 #add-question-btn,
 #apply-question-count,
-#save-test-btn,
+#save-basic-btn,
+#save-questions-btn,
+#save-results-btn,
 .admin-question button,
 .table-action-wrap button,
 #go-create-btn,
@@ -982,6 +994,31 @@ a.result-recommended-card {
     align-items: center;
     justify-content: space-between;
     gap: 0.8rem;
+}
+
+.admin-editor-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.admin-tab {
+    border: 1px solid var(--border);
+    background: var(--answer-bg);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 0.48rem 0.9rem;
+    cursor: pointer;
+}
+
+.admin-tab.active {
+    background: var(--primary);
+    color: var(--container-bg);
+    border-color: var(--primary);
+}
+
+.admin-tab-panel {
+    margin-top: 0.95rem;
 }
 
 .inline-control {

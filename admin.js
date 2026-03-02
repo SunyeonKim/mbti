@@ -40,6 +40,12 @@ const backToListBtn = document.getElementById("back-to-list-btn");
 const logoutBtn = document.getElementById("admin-logout-btn");
 
 const editorViewTitleEl = document.getElementById("editor-view-title");
+const adminTabBasicEl = document.getElementById("admin-tab-basic");
+const adminTabQuestionsEl = document.getElementById("admin-tab-questions");
+const adminTabResultsEl = document.getElementById("admin-tab-results");
+const adminPanelBasicEl = document.getElementById("admin-panel-basic");
+const adminPanelQuestionsEl = document.getElementById("admin-panel-questions");
+const adminPanelResultsEl = document.getElementById("admin-panel-results");
 const testTitleEl = document.getElementById("test-title");
 const cardTitleEl = document.getElementById("card-title");
 const isRecommendedEl = document.getElementById("is-recommended");
@@ -55,7 +61,9 @@ const resultImagePreviewEl = document.getElementById("result-image-preview");
 const addQuestionBtn = document.getElementById("add-question-btn");
 const questionCountLabelEl = document.getElementById("question-count-label");
 const questionListEl = document.getElementById("question-list");
-const saveTestBtn = document.getElementById("save-test-btn");
+const saveBasicBtn = document.getElementById("save-basic-btn");
+const saveQuestionsBtn = document.getElementById("save-questions-btn");
+const saveResultsBtn = document.getElementById("save-results-btn");
 const saveStatusEl = document.getElementById("admin-save-status");
 
 const firebaseServices = window.firebaseServices || {};
@@ -71,7 +79,8 @@ const state = {
     editingTestId: "",
     cardThumbnailData: "",
     resultSettings: {},
-    selectedResultMbti: MBTI_RESULT_TYPES[0]
+    selectedResultMbti: MBTI_RESULT_TYPES[0],
+    activeEditorTab: "basic"
 };
 
 function setAuthState(isAuthenticated) {
@@ -95,6 +104,77 @@ function showListView() {
 function showEditorView() {
     listViewEl.hidden = true;
     editorViewEl.hidden = false;
+}
+
+function setEditorTab(tab) {
+    const safeTab = ["basic", "questions", "results"].includes(tab) ? tab : "basic";
+    state.activeEditorTab = safeTab;
+
+    const tabPairs = [
+        { key: "basic", tabEl: adminTabBasicEl, panelEl: adminPanelBasicEl },
+        { key: "questions", tabEl: adminTabQuestionsEl, panelEl: adminPanelQuestionsEl },
+        { key: "results", tabEl: adminTabResultsEl, panelEl: adminPanelResultsEl }
+    ];
+
+    tabPairs.forEach((item) => {
+        const isActive = item.key === safeTab;
+        if (item.tabEl) {
+            item.tabEl.classList.toggle("active", isActive);
+            item.tabEl.setAttribute("aria-selected", isActive ? "true" : "false");
+        }
+        if (item.panelEl) {
+            item.panelEl.hidden = !isActive;
+        }
+    });
+}
+
+function normalizeThemeKeyword(testTitle) {
+    const title = String(testTitle || "").toLowerCase();
+    if (title.includes("러닝")) return "러닝";
+    if (title.includes("서핑")) return "서핑";
+    if (title.includes("캠핑")) return "캠핑";
+    if (title.includes("오토바이") || title.includes("라이딩")) return "라이딩";
+    if (title.includes("연애")) return "연애";
+    if (title.includes("소비")) return "소비";
+    if (title.includes("인간관계") || title.includes("관계")) return "관계";
+    if (title.includes("여행")) return "여행";
+    if (title.includes("회사")) return "회사";
+    if (title.includes("스트레스")) return "회복";
+    if (title.includes("덕질")) return "팬덤";
+    return "일상";
+}
+
+function buildScenarioByTheme(theme, questionTitle, questionIndex) {
+    const intros = {
+        러닝: "아침 공기가 차갑지만 크루 모임 장소에는 이미 사람들이 모여 있습니다.",
+        서핑: "해변에 도착하니 파도와 바람이 계속 변하고 있습니다.",
+        캠핑: "캠핑장에 도착하자 예상과 다른 변수가 하나씩 생기기 시작합니다.",
+        라이딩: "집결지에서 장비 점검을 마친 뒤 코스 브리핑이 시작됩니다.",
+        연애: "관계의 분위기가 미묘하게 바뀌는 순간이 찾아왔습니다.",
+        소비: "장바구니를 결제 직전까지 채운 상태에서 다시 생각하게 됩니다.",
+        관계: "여러 사람이 함께 있는 자리에서 예상 못한 감정선이 흐릅니다.",
+        여행: "여행 일정표와 실제 현장 상황 사이에 차이가 생겼습니다.",
+        회사: "업무 우선순위가 겹치는 날, 팀 내 의견도 갈리기 시작합니다.",
+        회복: "몸과 마음이 동시에 지친 날, 지금 필요한 회복 방식을 선택해야 합니다.",
+        팬덤: "최애 관련 소식이 한꺼번에 쏟아지며 팬덤 분위기가 뜨거워집니다.",
+        일상: "평소와 비슷하지만 선택 하나로 흐름이 달라질 수 있는 순간입니다."
+    };
+    const intro = intros[theme] || intros.일상;
+    const step = Number(questionIndex) + 1;
+    return `${step}번째 장면. ${intro} 이 상황에서 "${questionTitle}"에 대한 당신의 선택은 무엇인가요?`;
+}
+
+function withGeneratedScenarios(questions, testTitle) {
+    const theme = normalizeThemeKeyword(testTitle);
+    return (Array.isArray(questions) ? questions : []).map((question, index) => {
+        const title = String(question.question || "").trim();
+        const existingScenario = String(question.scenario || "").trim();
+        return {
+            ...question,
+            scenario: existingScenario || buildScenarioByTheme(theme, title, index),
+            scenarioEn: String(question.scenarioEn || "").trim()
+        };
+    });
 }
 
 function adminEmailFromId(id) {
@@ -408,13 +488,23 @@ function addQuestion() {
 
     questionInputLabel.appendChild(questionInput);
 
+    const scenarioInputLabel = document.createElement("label");
+    scenarioInputLabel.textContent = "상황";
+
+    const scenarioInput = document.createElement("textarea");
+    scenarioInput.className = "question-scenario";
+    scenarioInput.rows = 3;
+    scenarioInput.placeholder = `문항 ${questionIndex} 상황 입력`;
+
+    scenarioInputLabel.appendChild(scenarioInput);
+
     const answersWrap = document.createElement("div");
     answersWrap.className = "answers-editor";
     for (let i = 1; i <= 4; i += 1) {
         answersWrap.appendChild(createAnswerRow(i));
     }
 
-    questionWrap.append(topRow, questionInputLabel, answersWrap);
+    questionWrap.append(topRow, scenarioInputLabel, questionInputLabel, answersWrap);
     questionListEl.appendChild(questionWrap);
     updateQuestionTitles();
     updateQuestionCount();
@@ -424,11 +514,15 @@ function updateQuestionTitles() {
     questionListEl.querySelectorAll(".admin-question").forEach((questionEl, idx) => {
         const h3 = questionEl.querySelector("h3");
         const input = questionEl.querySelector(".question-title");
+        const scenarioInput = questionEl.querySelector(".question-scenario");
         if (h3) {
             h3.textContent = `문항 ${idx + 1}`;
         }
         if (input && !input.value) {
             input.placeholder = `문항 ${idx + 1} 질문 입력`;
+        }
+        if (scenarioInput && !scenarioInput.value) {
+            scenarioInput.placeholder = `문항 ${idx + 1} 상황 입력`;
         }
     });
 }
@@ -488,7 +582,11 @@ function collectQuestions() {
 
     const questionEditors = questionListEl.querySelectorAll(".admin-question");
     questionEditors.forEach((questionEditor, questionIndex) => {
+        const scenarioText = String(questionEditor.querySelector(".question-scenario").value || "").trim();
         const questionTitle = String(questionEditor.querySelector(".question-title").value || "").trim();
+        if (!scenarioText) {
+            throw new Error(`${questionIndex + 1}번 문항의 상황을 입력해 주세요.`);
+        }
         if (!questionTitle) {
             throw new Error(`${questionIndex + 1}번 문항의 질문 제목을 입력해 주세요.`);
         }
@@ -520,7 +618,7 @@ function collectQuestions() {
             throw new Error(`${questionIndex + 1}번 문항은 답변 4개가 필요합니다.`);
         }
 
-        questions.push({ question: questionTitle, answers });
+        questions.push({ scenario: scenarioText, question: questionTitle, answers });
     });
 
     return questions;
@@ -529,7 +627,6 @@ function collectQuestions() {
 function resetEditor() {
     state.editingTestId = "";
     editorViewTitleEl.textContent = "테스트 등록";
-    saveTestBtn.textContent = "등록";
 
     testTitleEl.value = "";
     cardTitleEl.value = "";
@@ -562,6 +659,7 @@ function resetEditor() {
     saveStatusEl.textContent = "";
     setQuestionCount(1);
     renderResultEditor(state.selectedResultMbti);
+    setEditorTab("basic");
 }
 
 function setAnswerEditor(answerEditor, answerData) {
@@ -641,7 +739,9 @@ function loadEditorFromData(data) {
             return;
         }
 
+        const scenarioInput = questionEl.querySelector(".question-scenario");
         const questionInput = questionEl.querySelector(".question-title");
+        scenarioInput.value = String(questionData.scenario || buildScenarioByTheme(normalizeThemeKeyword(data.title || data.cardTitle), String(questionData.question || ""), questionIndex));
         questionInput.value = String(questionData.question || "");
 
         const answerEditors = questionEl.querySelectorAll(".answer-editor");
@@ -664,79 +764,142 @@ function getCurrentAdminId() {
     return ADMIN_ID;
 }
 
-async function saveTest() {
-    saveStatusEl.textContent = "";
-
-    if (!isDbReady) {
-        saveStatusEl.textContent = "Firebase 설정이 없어 저장할 수 없습니다. firebase-config.js 값을 먼저 채워 주세요.";
-        return;
-    }
-
+function collectBasicFields() {
     const title = String(testTitleEl.value || "").trim();
     const cardTitle = String(cardTitleEl.value || "").trim();
     const isRecommended = Boolean(isRecommendedEl && isRecommendedEl.checked);
     const isPublished = Boolean(publishVisibleEl && publishVisibleEl.checked);
-    commitCurrentResultEditor();
 
     if (!title) {
-        saveStatusEl.textContent = "테스트 제목을 입력해 주세요.";
-        return;
+        throw new Error("테스트 제목을 입력해 주세요.");
     }
 
     if (!cardTitle) {
-        saveStatusEl.textContent = "카드 제목을 입력해 주세요.";
-        return;
+        throw new Error("카드 제목을 입력해 주세요.");
     }
 
-    let questions;
-    try {
-        questions = collectQuestions();
-    } catch (error) {
-        saveStatusEl.textContent = error.message;
-        return;
-    }
-
-    const payload = {
+    return {
         title,
         cardTitle,
         navTitle: cardTitle,
         isRecommended,
         isPublished,
-        thumbnail: state.cardThumbnailData,
+        thumbnail: state.cardThumbnailData
+    };
+}
+
+async function ensureDraftDocument() {
+    if (state.editingTestId) {
+        return state.editingTestId;
+    }
+    const basicPayload = collectBasicFields();
+    const created = await db.collection("tests").add({
+        ...basicPayload,
+        viewCount: 0,
         resultSettings: normalizeResultSettings(state.resultSettings),
-        mbtiDescriptions: MBTI_RESULT_TYPES.reduce((acc, mbti) => {
-            const content = String(state.resultSettings[mbti] && state.resultSettings[mbti].content || "").trim();
+        mbtiDescriptions: {},
+        questions: [],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdById: getCurrentAdminId(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedById: getCurrentAdminId()
+    });
+    state.editingTestId = created.id;
+    editorViewTitleEl.textContent = "테스트 수정";
+    return state.editingTestId;
+}
+
+async function saveBasicSettings() {
+    saveStatusEl.textContent = "";
+    if (!isDbReady) {
+        saveStatusEl.textContent = "Firebase 설정이 없어 저장할 수 없습니다. firebase-config.js 값을 먼저 채워 주세요.";
+        return;
+    }
+
+    try {
+        const payload = {
+            ...collectBasicFields(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedById: getCurrentAdminId()
+        };
+
+        if (state.editingTestId) {
+            saveStatusEl.textContent = "기본 설정 저장 중...";
+            await db.collection("tests").doc(state.editingTestId).update(payload);
+            saveStatusEl.textContent = "기본 설정 저장 완료";
+            return;
+        }
+
+        saveStatusEl.textContent = "기본 설정 등록 중...";
+        const created = await db.collection("tests").add({
+            ...payload,
+            viewCount: 0,
+            resultSettings: normalizeResultSettings(state.resultSettings),
+            mbtiDescriptions: {},
+            questions: [],
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdById: getCurrentAdminId()
+        });
+        state.editingTestId = created.id;
+        editorViewTitleEl.textContent = "테스트 수정";
+        saveStatusEl.textContent = "기본 설정 저장 완료";
+    } catch (error) {
+        saveStatusEl.textContent = error && error.message ? error.message : "기본 설정 저장 실패";
+    }
+}
+
+async function saveQuestionSettings() {
+    saveStatusEl.textContent = "";
+    if (!isDbReady) {
+        saveStatusEl.textContent = "Firebase 설정이 없어 저장할 수 없습니다. firebase-config.js 값을 먼저 채워 주세요.";
+        return;
+    }
+
+    try {
+        const draftId = await ensureDraftDocument();
+        const questions = withGeneratedScenarios(collectQuestions(), testTitleEl.value || cardTitleEl.value);
+        saveStatusEl.textContent = "문항 설정 저장 중...";
+        await db.collection("tests").doc(draftId).update({
+            questions,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedById: getCurrentAdminId()
+        });
+        saveStatusEl.textContent = "문항 설정 저장 완료";
+    } catch (error) {
+        console.error(error);
+        saveStatusEl.textContent = error && error.message ? error.message : "문항 설정 저장 실패";
+    }
+}
+
+async function saveResultSettings() {
+    saveStatusEl.textContent = "";
+    if (!isDbReady) {
+        saveStatusEl.textContent = "Firebase 설정이 없어 저장할 수 없습니다. firebase-config.js 값을 먼저 채워 주세요.";
+        return;
+    }
+
+    try {
+        const draftId = await ensureDraftDocument();
+        commitCurrentResultEditor();
+        const normalizedResults = normalizeResultSettings(state.resultSettings);
+        const mbtiDescriptions = MBTI_RESULT_TYPES.reduce((acc, mbti) => {
+            const content = String(normalizedResults[mbti] && normalizedResults[mbti].content || "").trim();
             if (content) {
                 acc[mbti] = content;
             }
             return acc;
-        }, {}),
-        questions,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedById: getCurrentAdminId()
-    };
-
-    saveStatusEl.textContent = state.editingTestId ? "수정 저장 중..." : "등록 중...";
-
-    try {
-        if (state.editingTestId) {
-            await db.collection("tests").doc(state.editingTestId).update(payload);
-            saveStatusEl.textContent = "수정 저장 완료";
-        } else {
-            await db.collection("tests").add({
-                ...payload,
-                viewCount: 0,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                createdById: getCurrentAdminId()
-            });
-            saveStatusEl.textContent = "등록 완료";
-        }
-
-        showListView();
-        await loadTestList();
+        }, {});
+        saveStatusEl.textContent = "결과 설정 저장 중...";
+        await db.collection("tests").doc(draftId).update({
+            resultSettings: normalizedResults,
+            mbtiDescriptions,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedById: getCurrentAdminId()
+        });
+        saveStatusEl.textContent = "결과 설정 저장 완료";
     } catch (error) {
         console.error(error);
-        saveStatusEl.textContent = "저장 실패: 콘솔 로그를 확인해 주세요.";
+        saveStatusEl.textContent = error && error.message ? error.message : "결과 설정 저장 실패";
     }
 }
 
@@ -1007,6 +1170,8 @@ function buildExcelWorkbookFromTestItem(item) {
         const answers = Array.isArray(question.answers) ? question.answers.slice(0, 4) : [];
         const row = {
             order: index + 1,
+            scenario_ko: fitExcelCellText(String(question.scenario || "").trim()),
+            scenario_en: fitExcelCellText(String(question.scenarioEn || "").trim()),
             question_ko: fitExcelCellText(String(question.question || "").trim()),
             question_en: fitExcelCellText(String(question.questionEn || "").trim())
         };
@@ -1047,7 +1212,7 @@ function buildExcelWorkbookFromTestItem(item) {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(basicRows), "Basic");
     XLSX.utils.book_append_sheet(
         wb,
-        XLSX.utils.json_to_sheet(questionRows.length ? questionRows : [{ order: 1, question_ko: "", question_en: "" }]),
+        XLSX.utils.json_to_sheet(questionRows.length ? questionRows : [{ order: 1, scenario_ko: "", scenario_en: "", question_ko: "", question_en: "" }]),
         "Questions"
     );
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resultRows), "Results");
@@ -1086,6 +1251,8 @@ function buildExcelTemplateWorkbook() {
 
     const questionRows = [{
         order: 1,
+        scenario_ko: "출근길에서 팀 프로젝트 메시지를 확인했다.",
+        scenario_en: "You check team project messages on your commute.",
         question_ko: "회의 전에 준비를 철저히 한다.",
         question_en: "I prepare thoroughly before meetings.",
         answer1_ko: "매우 그렇다",
@@ -1144,7 +1311,9 @@ function parseExcelQuestions(rows) {
             if (!question) {
                 throw new Error(`Questions 시트 ${order}번 문항의 question_ko가 비어 있습니다.`);
             }
+            const scenario = String(row.scenario_ko || "").trim();
             const questionEn = String(row.question_en || "").trim();
+            const scenarioEn = String(row.scenario_en || "").trim();
 
             const answers = [];
             for (let i = 1; i <= 4; i += 1) {
@@ -1172,10 +1341,12 @@ function parseExcelQuestions(rows) {
                 }
                 answers.push({ text, textEn, scores });
             }
-            return { order, question, questionEn, answers };
+            return { order, scenario, scenarioEn, question, questionEn, answers };
         })
         .sort((a, b) => a.order - b.order)
         .map((item) => ({
+            scenario: item.scenario,
+            scenarioEn: item.scenarioEn,
             question: item.question,
             questionEn: item.questionEn,
             answers: item.answers
@@ -1241,6 +1412,7 @@ async function importFromExcelFile(file) {
         throw new Error("Basic 시트의 title_ko, card_title_ko는 필수입니다.");
     }
 
+    const parsedQuestions = parseExcelQuestions(questionRows);
     const payload = {
         title,
         titleEn: String(basic.title_en || "").trim(),
@@ -1251,7 +1423,7 @@ async function importFromExcelFile(file) {
         isRecommended: parseBooleanCell(basic.is_recommended, false),
         isPublished: false,
         viewCount: 0,
-        questions: parseExcelQuestions(questionRows),
+        questions: withGeneratedScenarios(parsedQuestions, title || cardTitle),
         resultSettings: parseExcelResultSettings(resultRows),
         mbtiDescriptions: {},
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1290,7 +1462,6 @@ async function openEditView(testId) {
 
         state.editingTestId = testId;
         editorViewTitleEl.textContent = "테스트 수정";
-        saveTestBtn.textContent = "수정 저장";
         saveStatusEl.textContent = "";
         loadEditorFromData(doc.data() || {});
         showEditorView();
@@ -1305,7 +1476,7 @@ function getSeedQuestions() {
         return [];
     }
 
-    return translations.ko.questions
+    const normalized = translations.ko.questions
         .map((question) => {
             const answers = Array.isArray(question.answers) ? question.answers.slice(0, 4) : [];
             if (!question.question || answers.length !== 4) {
@@ -1330,11 +1501,14 @@ function getSeedQuestions() {
             }
 
             return {
+                scenario: String(question.scenario || "").trim(),
                 question: String(question.question).trim(),
                 answers: normalizedAnswers
             };
         })
         .filter(Boolean);
+
+    return withGeneratedScenarios(normalized, "MBTI 성격 검사");
 }
 
 function getSurfingSeedQuestions() {
@@ -2265,6 +2439,7 @@ ${consHtml}
 
 function createAxisQuestion(question, answers, primary, secondary) {
     return {
+        scenario: "",
         question,
         answers: [
             { text: answers[0], scores: { [primary]: 2 } },
@@ -2528,7 +2703,7 @@ async function ensureThemeSeedTest(seedKey, meta, questions, resultSettings, err
             viewCount: 0,
             thumbnail: "",
             resultSettings,
-            questions,
+            questions: withGeneratedScenarios(questions, meta.title),
             mbtiDescriptions: buildMbtiDescriptionsFromSettings(resultSettings),
             isPublished: true,
             createdById: ADMIN_ID,
@@ -2699,6 +2874,38 @@ async function ensureLegacyResultContentCleanup() {
     }
 }
 
+async function ensureQuestionScenarioCleanup() {
+    if (!isDbReady) {
+        return;
+    }
+
+    try {
+        const snapshot = await db.collection("tests").get();
+        for (const doc of snapshot.docs) {
+            const data = doc.data() || {};
+            const rawQuestions = Array.isArray(data.questions) ? data.questions : [];
+            if (!rawQuestions.length) {
+                continue;
+            }
+            const normalizedQuestions = withGeneratedScenarios(rawQuestions, data.title || data.cardTitle || "MBTI 테스트");
+            const changed = normalizedQuestions.some((item, index) => {
+                const before = rawQuestions[index] || {};
+                return String(before.scenario || "").trim() !== String(item.scenario || "").trim();
+            });
+            if (!changed) {
+                continue;
+            }
+            await db.collection("tests").doc(doc.id).update({
+                questions: normalizedQuestions,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedById: getCurrentAdminId()
+            });
+        }
+    } catch (error) {
+        console.error("문항 상황 텍스트 정리 실패:", error);
+    }
+}
+
 async function ensureDefaultMbtiTest() {
     if (!isAuthReady) {
         return;
@@ -2733,7 +2940,7 @@ async function ensureDefaultMbtiTest() {
             viewCount: 0,
             thumbnail: "",
             resultSettings: seedResultSettings,
-            questions: seedQuestions,
+            questions: withGeneratedScenarios(seedQuestions, "MBTI 성격 검사"),
             mbtiDescriptions: descriptions,
             isPublished: true,
             createdById: ADMIN_ID,
@@ -2779,7 +2986,7 @@ async function ensureSurfingMbtiTest() {
             viewCount: 0,
             thumbnail: "",
             resultSettings: seedResultSettings,
-            questions: seedQuestions,
+            questions: withGeneratedScenarios(seedQuestions, "서핑 MBTI 테스트"),
             mbtiDescriptions,
             isPublished: true,
             createdById: ADMIN_ID,
@@ -2825,7 +3032,7 @@ async function ensureCampingMbtiTest() {
             viewCount: 0,
             thumbnail: "",
             resultSettings: seedResultSettings,
-            questions: seedQuestions,
+            questions: withGeneratedScenarios(seedQuestions, "캠핑 MBTI 테스트"),
             mbtiDescriptions,
             isPublished: true,
             createdById: ADMIN_ID,
@@ -2871,7 +3078,7 @@ async function ensureMotorbikeMbtiTest() {
             viewCount: 0,
             thumbnail: "",
             resultSettings: seedResultSettings,
-            questions: seedQuestions,
+            questions: withGeneratedScenarios(seedQuestions, "오토바이 라이딩 MBTI 테스트"),
             mbtiDescriptions,
             isPublished: true,
             createdById: ADMIN_ID,
@@ -3047,8 +3254,28 @@ if (addQuestionBtn) {
     addQuestionBtn.addEventListener("click", addQuestion);
 }
 
-if (saveTestBtn) {
-    saveTestBtn.addEventListener("click", saveTest);
+if (saveBasicBtn) {
+    saveBasicBtn.addEventListener("click", saveBasicSettings);
+}
+
+if (saveQuestionsBtn) {
+    saveQuestionsBtn.addEventListener("click", saveQuestionSettings);
+}
+
+if (saveResultsBtn) {
+    saveResultsBtn.addEventListener("click", saveResultSettings);
+}
+
+if (adminTabBasicEl) {
+    adminTabBasicEl.addEventListener("click", () => setEditorTab("basic"));
+}
+
+if (adminTabQuestionsEl) {
+    adminTabQuestionsEl.addEventListener("click", () => setEditorTab("questions"));
+}
+
+if (adminTabResultsEl) {
+    adminTabResultsEl.addEventListener("click", () => setEditorTab("results"));
 }
 
 if (resultMbtiSelectEl) {
@@ -3074,6 +3301,7 @@ if (resultContentInputEl) {
     state.resultSettings = createEmptyResultSettings();
     renderResultEditor(state.selectedResultMbti);
     setQuestionCount(1);
+    setEditorTab("basic");
 
     if (!isAuthReady) {
         setAuthState(false);
@@ -3089,6 +3317,7 @@ if (resultContentInputEl) {
             setLoginError("");
             await ensureDefaultMbtiTest();
             await ensureLegacyResultContentCleanup();
+            await ensureQuestionScenarioCleanup();
             await ensureSurfingMbtiTest();
             await ensureCampingMbtiTest();
             await ensureMotorbikeMbtiTest();
