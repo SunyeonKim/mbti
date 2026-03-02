@@ -231,6 +231,108 @@ p {
     margin: 0 0 0.9rem;
 }
 
+.section-head-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+}
+
+.section-head-row h2 {
+    margin: 0;
+}
+
+.insights-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.insights-tab {
+    border: 1px solid var(--border);
+    background: var(--answer-bg);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 0.42rem 0.85rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.insights-tab.active {
+    background: var(--primary);
+    color: var(--container-bg);
+    border-color: var(--primary);
+}
+
+.insights-tab[hidden] {
+    display: none;
+}
+
+.insights-panel {
+    margin-top: 0.25rem;
+}
+
+.mind-guide-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+}
+
+.mind-guide-link {
+    display: block;
+    text-decoration: none;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 0.85rem;
+    background: var(--answer-bg);
+    line-height: 1.5;
+}
+
+.mind-guide-link:hover {
+    background: var(--answer-hover);
+}
+
+.mind-board-intro {
+    margin-bottom: 1.4rem;
+}
+
+.mind-board-toc {
+    margin: 0.8rem 0 0;
+    padding-left: 1.2rem;
+    line-height: 1.75;
+}
+
+.mind-board-toc a {
+    color: var(--text);
+}
+
+.mind-board-posts {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.mind-post {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--answer-bg);
+    padding: 1rem;
+}
+
+.mind-post h2 {
+    margin: 0 0 0.65rem;
+    font-size: 1.15rem;
+    line-height: 1.45;
+}
+
+.mind-post p {
+    margin: 0.45rem 0 0;
+    line-height: 1.72;
+}
+
 .intro-copy {
     margin: 0;
     line-height: 1.7;
@@ -1079,6 +1181,11 @@ a.result-recommended-card {
 
     .content-section {
         margin-top: 1.6rem;
+    }
+
+    .section-head-row {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 

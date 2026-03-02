@@ -82,12 +82,23 @@
                 <h1>모두의 테스트</h1>
                 <p class="sub-copy">다른 테스트도 해보고, 결과는 친구들과 함께 나눠보세요 ✨</p>
 
-                <section id="recent-results-section" class="content-section" aria-labelledby="recent-results-title" hidden>
-                    <h2 id="recent-results-title">최근 테스트 결과</h2>
-                    <div class="recent-carousel-shell">
-                        <div id="recent-results-list" class="recent-carousel-track" aria-label="최근 테스트 결과 캐러셀"></div>
+                <section id="recent-results-section" class="content-section" aria-labelledby="insights-title">
+                    <div class="section-head-row">
+                        <h2 id="insights-title">최근 테스트 결과 / 마음 사용 설명서</h2>
+                        <div id="insights-tabs" class="insights-tabs" role="tablist" aria-label="홈 콘텐츠 탭">
+                            <button id="insights-tab-recent" class="insights-tab" type="button" role="tab" aria-controls="insights-panel-recent" aria-selected="true">최근 테스트 결과</button>
+                            <button id="insights-tab-guide" class="insights-tab" type="button" role="tab" aria-controls="insights-panel-guide" aria-selected="false">마음 사용 설명서</button>
+                        </div>
                     </div>
-                    <div id="recent-results-indicators" class="carousel-indicators" aria-label="최근 테스트 결과 인디케이터"></div>
+                    <div id="insights-panel-recent" class="insights-panel" role="tabpanel" aria-labelledby="insights-tab-recent">
+                        <div class="recent-carousel-shell">
+                            <div id="recent-results-list" class="recent-carousel-track" aria-label="최근 테스트 결과 캐러셀"></div>
+                        </div>
+                        <div id="recent-results-indicators" class="carousel-indicators" aria-label="최근 테스트 결과 인디케이터"></div>
+                    </div>
+                    <div id="insights-panel-guide" class="insights-panel" role="tabpanel" aria-labelledby="insights-tab-guide" hidden>
+                        <div id="mind-guide-recommendations" class="mind-guide-list"></div>
+                    </div>
                 </section>
 
                 <section class="content-section" aria-labelledby="available-tests-title">

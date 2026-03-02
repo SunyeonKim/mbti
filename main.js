@@ -36,6 +36,12 @@ const surveyTopAnchorEl = document.getElementById("survey-top-anchor");
 const recentResultsSectionEl = document.getElementById("recent-results-section");
 const recentResultsListEl = document.getElementById("recent-results-list");
 const recentResultsIndicatorsEl = document.getElementById("recent-results-indicators");
+const insightsTabsEl = document.getElementById("insights-tabs");
+const insightsTabRecentEl = document.getElementById("insights-tab-recent");
+const insightsTabGuideEl = document.getElementById("insights-tab-guide");
+const insightsPanelRecentEl = document.getElementById("insights-panel-recent");
+const insightsPanelGuideEl = document.getElementById("insights-panel-guide");
+const mindGuideRecommendationsEl = document.getElementById("mind-guide-recommendations");
 const resultRecommendedSectionEl = document.getElementById("result-recommended-section");
 const resultRecommendedListEl = document.getElementById("result-recommended-list");
 const toastEl = document.getElementById("toast");
@@ -43,6 +49,23 @@ const toastEl = document.getElementById("toast");
 const RECENT_RESULTS_STORAGE_KEY = "recentTestResultsV1";
 const MAX_RECENT_RESULTS = 5;
 const DRAG_SCROLL_THRESHOLD = 5;
+const MIND_GUIDE_POSTS = [
+    { slug: "mbti-science-truth", title: "MBTI는 과학일까? 심리학자가 말하는 MBTI의 진실" },
+    { slug: "mbti-test-principles", title: "MBTI 검사 원리 완전 해부: 16가지 유형은 어떻게 만들어질까?" },
+    { slug: "mbti-vs-big5", title: "MBTI와 Big5 성격이론 비교: 무엇이 더 신뢰할 수 있을까?" },
+    { slug: "free-vs-paid-mbti", title: "무료 MBTI 검사와 유료 검사의 차이점 (정확도 실험)" },
+    { slug: "why-mbti-results-change", title: "MBTI 결과가 매번 다르게 나오는 이유" },
+    { slug: "mbti-compatibility-data", title: "MBTI 궁합은 진짜 맞을까? 실제 커플 데이터 분석" },
+    { slug: "infp-love-pain-pattern", title: "INFP가 연애에서 상처받는 진짜 이유" },
+    { slug: "estj-love-difficulty-pattern", title: "ESTJ가 연애할 때 어려움을 겪는 패턴" },
+    { slug: "mbti-contact-styles", title: "MBTI별 연락 스타일 총정리" },
+    { slug: "breakup-reaction-by-type", title: "헤어질 때 유형별 반응 차이" },
+    { slug: "e-i-energy-recovery", title: "E와 I의 진짜 차이: 사람 만나는 횟수가 아니라 에너지 회복 방식이다" },
+    { slug: "t-f-decision-structure", title: "T와 F는 공감 능력 차이가 아니다 - 의사결정 구조 분석" },
+    { slug: "j-p-productivity", title: "J와 P의 생산성 차이: 시간관리 방식 비교 실험" },
+    { slug: "n-idea-execution-gap", title: "N형이 아이디어는 많은데 실행을 못 하는 이유" },
+    { slug: "s-practical-strength", title: "S형이 현실에서 강한 이유 (업무 능력 분석)" }
+];
 
 const isTestPage = Boolean(
     questionEl
@@ -75,6 +98,7 @@ let recentDragStartLeft = 0;
 let activeTestFilter = "all";
 let popularSortOrder = "desc";
 let latestSortOrder = "desc";
+let activeInsightsTab = "recent";
 
 const COPY_ICON_SVG = `
 <svg class="doc-copy-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -502,6 +526,7 @@ function renderDynamicNav() {
     dynamicNavLinksEl.innerHTML = "";
     [
         { text: "홈", href: "index.html" },
+        { text: "마음 사용 설명서", href: "mind-guide.html" },
         { text: "서비스 소개", href: "service.html" },
         { text: "개인정보처리방침", href: "privacy.html" },
         { text: "이용약관", href: "terms.html" },
@@ -516,6 +541,76 @@ function renderDynamicNav() {
         });
         dynamicNavLinksEl.appendChild(link);
     });
+}
+
+function getRandomItems(items, count) {
+    const copied = [...items];
+    for (let i = copied.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copied[i], copied[j]] = [copied[j], copied[i]];
+    }
+    return copied.slice(0, Math.max(0, count));
+}
+
+function renderMindGuideRecommendations() {
+    if (!mindGuideRecommendationsEl) {
+        return;
+    }
+    mindGuideRecommendationsEl.innerHTML = "";
+
+    const recommended = getRandomItems(MIND_GUIDE_POSTS, 5);
+    recommended.forEach((post) => {
+        const link = document.createElement("a");
+        link.className = "mind-guide-link";
+        link.href = `mind-guide.html#${post.slug}`;
+        link.textContent = post.title;
+        mindGuideRecommendationsEl.appendChild(link);
+    });
+}
+
+function setInsightsActiveTab(tab) {
+    if (!insightsTabsEl || !insightsTabGuideEl || !insightsPanelGuideEl) {
+        return;
+    }
+
+    const hasRecentTab = Boolean(insightsTabRecentEl && !insightsTabRecentEl.hidden);
+    const nextTab = tab === "recent" && hasRecentTab ? "recent" : "guide";
+    activeInsightsTab = nextTab;
+
+    if (insightsTabRecentEl) {
+        const recentSelected = nextTab === "recent";
+        insightsTabRecentEl.setAttribute("aria-selected", recentSelected ? "true" : "false");
+        insightsTabRecentEl.classList.toggle("active", recentSelected);
+    }
+
+    const guideSelected = nextTab === "guide";
+    insightsTabGuideEl.setAttribute("aria-selected", guideSelected ? "true" : "false");
+    insightsTabGuideEl.classList.toggle("active", guideSelected);
+
+    if (insightsPanelRecentEl) {
+        insightsPanelRecentEl.hidden = nextTab !== "recent";
+    }
+    insightsPanelGuideEl.hidden = nextTab !== "guide";
+}
+
+function updateInsightsTabs(hasRecentResults) {
+    if (!insightsTabsEl || !insightsTabGuideEl || !insightsPanelGuideEl) {
+        return;
+    }
+
+    if (insightsTabRecentEl) {
+        insightsTabRecentEl.hidden = !hasRecentResults;
+    }
+
+    if (!hasRecentResults) {
+        setInsightsActiveTab("guide");
+        return;
+    }
+
+    if (activeInsightsTab !== "guide" && activeInsightsTab !== "recent") {
+        activeInsightsTab = "recent";
+    }
+    setInsightsActiveTab(activeInsightsTab);
 }
 
 function renderTestCards() {
@@ -829,7 +924,7 @@ function saveRecentResult(test, mbtiType, description) {
 
 function renderRecentResults() {
     if (!recentResultsListEl || !recentResultsSectionEl || !recentResultsIndicatorsEl) {
-        return;
+        return false;
     }
 
     const recent = RecentResultsStore
@@ -839,11 +934,8 @@ function renderRecentResults() {
     recentResultsIndicatorsEl.innerHTML = "";
 
     if (!recent.length) {
-        recentResultsSectionEl.hidden = true;
-        return;
+        return false;
     }
-
-    recentResultsSectionEl.hidden = false;
 
     recent.forEach((item) => {
         const card = document.createElement("a");
@@ -876,6 +968,8 @@ function renderRecentResults() {
             recentResultsListEl.scrollLeft = 0;
         }
     });
+
+    return true;
 }
 
 function getRecentCardSpan() {
@@ -1113,7 +1207,7 @@ function showResult() {
     resultDescriptionEl.innerHTML = renderResultContentHtml(resolvedResultContent);
     renderResultRecommendations();
     saveRecentResult(currentTest, mbtiType, resolvedResultContent || "");
-    renderRecentResults();
+    updateInsightsTabs(renderRecentResults());
 
     if (resultGuideImageEl) {
         const resultImageUrl = String(resultConfig.image || currentTest.resultImage || "").trim();
@@ -1212,6 +1306,18 @@ if (backToListBtn) {
     backToListBtn.addEventListener("click", showListView);
 }
 
+if (insightsTabRecentEl) {
+    insightsTabRecentEl.addEventListener("click", () => {
+        setInsightsActiveTab("recent");
+    });
+}
+
+if (insightsTabGuideEl) {
+    insightsTabGuideEl.addEventListener("click", () => {
+        setInsightsActiveTab("guide");
+    });
+}
+
 if (recentResultsListEl && recentResultsIndicatorsEl) {
     recentResultsListEl.addEventListener("scroll", () => {
         const dots = recentResultsIndicatorsEl.querySelectorAll(".carousel-dot");
@@ -1294,13 +1400,14 @@ async function initPage() {
     setLanguage(currentLanguage);
     decorateShareButtons();
     renderDynamicNav();
+    renderMindGuideRecommendations();
     updateFilterControls();
     if (!isTestPage) {
         return;
     }
     await loadTests();
     renderTestCards();
-    renderRecentResults();
+    updateInsightsTabs(renderRecentResults());
 
     const testIdFromQuery = new URLSearchParams(window.location.search).get("test");
     if (testIdFromQuery && tests.some((test) => test.id === testIdFromQuery)) {
