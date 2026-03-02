@@ -43,6 +43,7 @@ const insightsTabGuideEl = document.getElementById("insights-tab-guide");
 const insightsPanelRecentEl = document.getElementById("insights-panel-recent");
 const insightsPanelGuideEl = document.getElementById("insights-panel-guide");
 const mindGuideRecommendationsEl = document.getElementById("mind-guide-recommendations");
+const mindGuideIndicatorsEl = document.getElementById("mind-guide-indicators");
 const resultRecommendedSectionEl = document.getElementById("result-recommended-section");
 const resultRecommendedListEl = document.getElementById("result-recommended-list");
 const toastEl = document.getElementById("toast");
@@ -75,10 +76,6 @@ let currentLanguage = localStorage.getItem("language") || "ko";
 let currentTheme = localStorage.getItem("theme")
     || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 let toastTimer = null;
-let isRecentDragging = false;
-let recentDragMoved = false;
-let recentDragStartX = 0;
-let recentDragStartLeft = 0;
 let activeTestFilter = "all";
 let popularSortOrder = "desc";
 let latestSortOrder = "desc";
@@ -557,6 +554,9 @@ function renderMindGuideRecommendations() {
         return;
     }
     mindGuideRecommendationsEl.innerHTML = "";
+    if (mindGuideIndicatorsEl) {
+        mindGuideIndicatorsEl.innerHTML = "";
+    }
 
     const recommended = getRandomItems(getMindGuidePosts(), 5);
     recommended.forEach((post) => {
@@ -586,6 +586,11 @@ function renderMindGuideRecommendations() {
         body.append(category, title, summary, meta);
         card.appendChild(body);
         mindGuideRecommendationsEl.appendChild(card);
+    });
+
+    renderCarouselIndicators(mindGuideIndicatorsEl, mindGuideRecommendationsEl, recommended.length, 0, "마음 사용 설명서");
+    requestAnimationFrame(() => {
+        mindGuideRecommendationsEl.scrollLeft = 0;
     });
 }
 
@@ -993,11 +998,11 @@ function renderRecentResults() {
     return true;
 }
 
-function getRecentCardSpan() {
-    if (!recentResultsListEl) {
+function getCarouselCardSpan(trackEl) {
+    if (!trackEl) {
         return 1;
     }
-    const cards = recentResultsListEl.querySelectorAll(".carousel-card");
+    const cards = trackEl.querySelectorAll(".carousel-card");
     if (!cards.length) {
         return 1;
     }
@@ -1009,29 +1014,103 @@ function getRecentCardSpan() {
     return Math.max(1, secondRect.left - firstRect.left);
 }
 
-function renderRecentResultIndicators(total, activeIndex) {
-    if (!recentResultsIndicatorsEl) {
+function renderCarouselIndicators(indicatorEl, trackEl, total, activeIndex, labelPrefix) {
+    if (!indicatorEl || !trackEl) {
         return;
     }
-    recentResultsIndicatorsEl.innerHTML = "";
+    indicatorEl.innerHTML = "";
 
     for (let i = 0; i < total; i += 1) {
         const dot = document.createElement("button");
         dot.type = "button";
         dot.className = `carousel-dot${i === activeIndex ? " active" : ""}`;
-        dot.setAttribute("aria-label", `최근 결과 ${i + 1}번으로 이동`);
+        dot.setAttribute("aria-label", `${labelPrefix} ${i + 1}번으로 이동`);
         dot.addEventListener("click", () => {
-            if (!recentResultsListEl) {
-                return;
-            }
-            const span = getRecentCardSpan();
-            recentResultsListEl.scrollTo({
+            const span = getCarouselCardSpan(trackEl);
+            trackEl.scrollTo({
                 left: span * i,
                 behavior: "smooth"
             });
         });
-        recentResultsIndicatorsEl.appendChild(dot);
+        indicatorEl.appendChild(dot);
     }
+}
+
+function renderRecentResultIndicators(total, activeIndex) {
+    renderCarouselIndicators(recentResultsIndicatorsEl, recentResultsListEl, total, activeIndex, "최근 결과");
+}
+
+function bindCarouselInteractions(trackEl, indicatorEl) {
+    if (!trackEl || !indicatorEl) {
+        return;
+    }
+
+    let isDragging = false;
+    let dragMoved = false;
+    let dragStartX = 0;
+    let dragStartLeft = 0;
+
+    function syncActiveDot() {
+        const dots = indicatorEl.querySelectorAll(".carousel-dot");
+        if (!dots.length) {
+            return;
+        }
+        const span = getCarouselCardSpan(trackEl);
+        const activeIndex = Math.max(0, Math.min(
+            dots.length - 1,
+            Math.round(trackEl.scrollLeft / span)
+        ));
+        dots.forEach((dot, index) => {
+            dot.classList.toggle("active", index === activeIndex);
+        });
+    }
+
+    function stopDragging() {
+        if (!isDragging) {
+            return;
+        }
+        isDragging = false;
+        trackEl.classList.remove("dragging");
+    }
+
+    trackEl.addEventListener("scroll", syncActiveDot);
+    trackEl.addEventListener("mousedown", (event) => {
+        if (event.button !== 0) {
+            return;
+        }
+        isDragging = true;
+        dragMoved = false;
+        dragStartX = event.clientX;
+        dragStartLeft = trackEl.scrollLeft;
+        trackEl.classList.add("dragging");
+    });
+
+    window.addEventListener("mousemove", (event) => {
+        if (!isDragging) {
+            return;
+        }
+        const deltaX = event.clientX - dragStartX;
+        if (Math.abs(deltaX) > DRAG_SCROLL_THRESHOLD) {
+            dragMoved = true;
+        }
+        trackEl.scrollLeft = dragStartLeft - deltaX;
+    });
+
+    window.addEventListener("mouseup", stopDragging);
+    window.addEventListener("blur", stopDragging);
+    document.addEventListener("mouseleave", (event) => {
+        if (!event.relatedTarget) {
+            stopDragging();
+        }
+    });
+
+    trackEl.addEventListener("click", (event) => {
+        if (dragMoved) {
+            event.preventDefault();
+            event.stopPropagation();
+            dragMoved = false;
+        }
+    }, true);
 }
 
 function setLanguage(lang) {
@@ -1344,57 +1423,8 @@ if (insightsTabGuideEl) {
     });
 }
 
-if (recentResultsListEl && recentResultsIndicatorsEl) {
-    recentResultsListEl.addEventListener("scroll", () => {
-        const dots = recentResultsIndicatorsEl.querySelectorAll(".carousel-dot");
-        if (!dots.length) {
-            return;
-        }
-        const span = getRecentCardSpan();
-        const activeIndex = Math.max(0, Math.min(
-            dots.length - 1,
-            Math.round(recentResultsListEl.scrollLeft / span)
-        ));
-        dots.forEach((dot, index) => {
-            dot.classList.toggle("active", index === activeIndex);
-        });
-    });
-
-    recentResultsListEl.addEventListener("mousedown", (event) => {
-        isRecentDragging = true;
-        recentDragMoved = false;
-        recentDragStartX = event.clientX;
-        recentDragStartLeft = recentResultsListEl.scrollLeft;
-        recentResultsListEl.classList.add("dragging");
-    });
-
-    window.addEventListener("mousemove", (event) => {
-        if (!isRecentDragging) {
-            return;
-        }
-        const deltaX = event.clientX - recentDragStartX;
-        if (Math.abs(deltaX) > DRAG_SCROLL_THRESHOLD) {
-            recentDragMoved = true;
-        }
-        recentResultsListEl.scrollLeft = recentDragStartLeft - deltaX;
-    });
-
-    window.addEventListener("mouseup", () => {
-        if (!isRecentDragging) {
-            return;
-        }
-        isRecentDragging = false;
-        recentResultsListEl.classList.remove("dragging");
-    });
-
-    recentResultsListEl.addEventListener("click", (event) => {
-        if (recentDragMoved) {
-            event.preventDefault();
-            event.stopPropagation();
-            recentDragMoved = false;
-        }
-    }, true);
-}
+bindCarouselInteractions(recentResultsListEl, recentResultsIndicatorsEl);
+bindCarouselInteractions(mindGuideRecommendationsEl, mindGuideIndicatorsEl);
 
 testFilterButtons.forEach((button) => {
     button.addEventListener("click", () => {
