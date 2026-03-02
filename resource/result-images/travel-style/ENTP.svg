@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="여행 MBTI ENTP">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#172554"/>
+      <stop offset="60%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#93c5fd"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1060" cy="120" r="180" fill="rgba(255,255,255,0.16)"/>
+  <circle cx="150" cy="560" r="250" fill="rgba(255,255,255,0.10)"/>
+  <rect x="60" y="54" width="1080" height="522" rx="30" fill="rgba(10,12,20,0.34)" stroke="rgba(255,255,255,0.32)"/>
+  <text x="110" y="142" fill="#ffffff" font-size="46" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="800">여행 MBTI</text>
+  <text x="110" y="192" fill="#e2e8f0" font-size="25" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="600">계획형? 즉흥형? 여행 온도차 테스트</text>
+  <text x="110" y="318" fill="#ffffff" font-size="132" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="900">ENTP</text>
+  <text x="112" y="370" fill="#dbeafe" font-size="30" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="700">아이디어 폭격기</text>
+  <text x="112" y="420" fill="#ffffff" font-size="26" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="600">새로운 각도 찾으면 이미 반쯤 이긴 게임</text>
+  <text x="112" y="510" fill="#bfdbfe" font-size="22" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="600">E · N · T · P</text>
+</svg>

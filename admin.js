@@ -708,7 +708,7 @@ function loadEditorFromData(data) {
     }
 
     state.cardThumbnailData = String(data.thumbnail || "");
-    state.resultSettings = normalizeResultSettings(data.resultSettings);
+    state.resultSettings = withDefaultResultImages(data.resultSettings, data).resultSettings;
 
     if (state.cardThumbnailData) {
         cardThumbnailPreviewEl.src = state.cardThumbnailData;
@@ -881,7 +881,12 @@ async function saveResultSettings() {
     try {
         const draftId = await ensureDraftDocument();
         commitCurrentResultEditor();
-        const normalizedResults = normalizeResultSettings(state.resultSettings);
+        const normalizedResults = withDefaultResultImages(state.resultSettings, {
+            seedKey: "",
+            title: testTitleEl.value,
+            cardTitle: cardTitleEl.value
+        }).resultSettings;
+        state.resultSettings = normalizedResults;
         const mbtiDescriptions = MBTI_RESULT_TYPES.reduce((acc, mbti) => {
             const content = String(normalizedResults[mbti] && normalizedResults[mbti].content || "").trim();
             if (content) {
@@ -2479,6 +2484,71 @@ const MBTI_THEME_PROFILES = {
     ESFP: { alias: "페스티벌 메이커형", emoji: "🎉", style: "사람을 연결해 분위기를 살리는 타입", detail: "즐기는 힘이 커서 회복 탄력성이 높습니다.", pros: ["친화력", "현장 에너지", "적응력", "회복력"], cons: ["장기 계획 약화", "집중 분산", "흥미 중심 선택"], first: "INTJ", second: "ISTJ" }
 };
 
+const RESULT_IMAGE_THEME_BY_SEED_KEY = {
+    [DEFAULT_TEST_SEED_KEY]: "default",
+    [SURFING_TEST_SEED_KEY]: "surfing",
+    [CAMPING_TEST_SEED_KEY]: "camping",
+    [MOTORBIKE_TEST_SEED_KEY]: "motorbike",
+    [LOVE_STYLE_TEST_SEED_KEY]: "love-style",
+    [CONSUMPTION_STYLE_TEST_SEED_KEY]: "consumption-style",
+    [RELATIONSHIP_STYLE_TEST_SEED_KEY]: "relationship-style",
+    [TRAVEL_STYLE_TEST_SEED_KEY]: "travel-style",
+    [OFFICE_CHARACTER_TEST_SEED_KEY]: "office-character",
+    [STRESS_RELIEF_TEST_SEED_KEY]: "stress-relief",
+    [FANDOM_STYLE_TEST_SEED_KEY]: "fandom-style"
+};
+
+function getResultImageBaseUrl() {
+    if (typeof window !== "undefined" && window.location && window.location.origin) {
+        return `${window.location.origin}/mbti/resource/result-images`;
+    }
+    return "https://sunyeonkim.github.io/mbti/resource/result-images";
+}
+
+function inferThemeSlugFromTest(testData) {
+    const seedKey = String(testData && testData.seedKey || "").trim();
+    if (RESULT_IMAGE_THEME_BY_SEED_KEY[seedKey]) {
+        return RESULT_IMAGE_THEME_BY_SEED_KEY[seedKey];
+    }
+
+    const title = String((testData && (testData.title || testData.cardTitle)) || "").toLowerCase();
+    if (title.includes("러닝")) return "running";
+    if (title.includes("서핑")) return "surfing";
+    if (title.includes("캠핑")) return "camping";
+    if (title.includes("오토바이") || title.includes("라이딩")) return "motorbike";
+    if (title.includes("연애")) return "love-style";
+    if (title.includes("소비")) return "consumption-style";
+    if (title.includes("인간관계") || title.includes("관계")) return "relationship-style";
+    if (title.includes("여행")) return "travel-style";
+    if (title.includes("회사")) return "office-character";
+    if (title.includes("스트레스")) return "stress-relief";
+    if (title.includes("덕질")) return "fandom-style";
+    if (title.includes("mbti 성격")) return "default";
+    return "generic";
+}
+
+function buildResultImageUrl(themeSlug, mbti) {
+    return `${getResultImageBaseUrl()}/${themeSlug}/${mbti}.svg`;
+}
+
+function withDefaultResultImages(rawSettings, testData) {
+    const themeSlug = inferThemeSlugFromTest(testData);
+    const normalized = normalizeResultSettings(rawSettings);
+    const next = normalizeResultSettings(normalized);
+    let changed = false;
+
+    MBTI_RESULT_TYPES.forEach((mbti) => {
+        const currentImage = String(next[mbti] && next[mbti].image || "").trim();
+        const fallbackUrl = buildResultImageUrl(themeSlug, mbti);
+        if (!currentImage) {
+            next[mbti].image = fallbackUrl;
+            changed = true;
+        }
+    });
+
+    return { changed, resultSettings: next };
+}
+
 function createThemeResultSettings(config) {
     const settings = createEmptyResultSettings();
 
@@ -2906,6 +2976,30 @@ async function ensureQuestionScenarioCleanup() {
     }
 }
 
+async function ensureResultRepresentativeImages() {
+    if (!isDbReady) {
+        return;
+    }
+
+    try {
+        const snapshot = await db.collection("tests").get();
+        for (const doc of snapshot.docs) {
+            const data = doc.data() || {};
+            const patched = withDefaultResultImages(data.resultSettings, data);
+            if (!patched.changed) {
+                continue;
+            }
+            await db.collection("tests").doc(doc.id).update({
+                resultSettings: patched.resultSettings,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedById: getCurrentAdminId()
+            });
+        }
+    } catch (error) {
+        console.error("대표 이미지 자동 등록 실패:", error);
+    }
+}
+
 async function ensureDefaultMbtiTest() {
     if (!isAuthReady) {
         return;
@@ -3318,6 +3412,7 @@ if (resultContentInputEl) {
             await ensureDefaultMbtiTest();
             await ensureLegacyResultContentCleanup();
             await ensureQuestionScenarioCleanup();
+            await ensureResultRepresentativeImages();
             await ensureSurfingMbtiTest();
             await ensureCampingMbtiTest();
             await ensureMotorbikeMbtiTest();
@@ -3328,6 +3423,7 @@ if (resultContentInputEl) {
             await ensureOfficeCharacterMbtiTest();
             await ensureStressReliefMbtiTest();
             await ensureFandomStyleMbtiTest();
+            await ensureResultRepresentativeImages();
             state.currentPage = 1;
             await loadTestList();
             return;

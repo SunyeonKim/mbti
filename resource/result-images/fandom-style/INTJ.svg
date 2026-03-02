@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="덕질 MBTI INTJ">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4c1d95"/>
+      <stop offset="60%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#f9a8d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1060" cy="120" r="180" fill="rgba(255,255,255,0.16)"/>
+  <circle cx="150" cy="560" r="250" fill="rgba(255,255,255,0.10)"/>
+  <rect x="60" y="54" width="1080" height="522" rx="30" fill="rgba(10,12,20,0.34)" stroke="rgba(255,255,255,0.32)"/>
+  <text x="110" y="142" fill="#ffffff" font-size="46" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="800">덕질 MBTI</text>
+  <text x="110" y="192" fill="#e2e8f0" font-size="25" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="600">입덕 텐션부터 소비 루틴까지</text>
+  <text x="110" y="318" fill="#ffffff" font-size="132" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="900">INTJ</text>
+  <text x="112" y="370" fill="#dbeafe" font-size="30" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="700">플랜 아키텍트</text>
+  <text x="112" y="420" fill="#ffffff" font-size="26" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="600">큰 그림부터 설계하고 바로 밀어붙임</text>
+  <text x="112" y="510" fill="#bfdbfe" font-size="22" font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif" font-weight="600">I · N · T · J</text>
+</svg>
