@@ -906,6 +906,59 @@ function renderResultContentHtml(rawText) {
     return escapeHtml(source).replace(/\r?\n/g, "<br>");
 }
 
+function getResultImageBaseUrl() {
+    if (typeof window !== "undefined" && window.location && window.location.origin) {
+        const pathname = String(window.location.pathname || "");
+        const useMbtiPrefix = pathname === "/mbti" || pathname.startsWith("/mbti/");
+        const prefix = useMbtiPrefix ? "/mbti" : "";
+        return `${window.location.origin}${prefix}/resource/result-images`;
+    }
+    return "https://sunyeonkim.github.io/mbti/resource/result-images";
+}
+
+function inferThemeSlugFromTest(test) {
+    const title = `${String(test && (test.title || "")).toLowerCase()} ${String(test && (test.cardTitle || "")).toLowerCase()} ${String(test && (test.titleEn || "")).toLowerCase()} ${String(test && (test.cardTitleEn || "")).toLowerCase()}`;
+    if (title.includes("러닝") || title.includes("running")) return "running";
+    if (title.includes("서핑") || title.includes("surfing")) return "surfing";
+    if (title.includes("캠핑") || title.includes("camping")) return "camping";
+    if (title.includes("오토바이") || title.includes("라이딩") || title.includes("motorbike")) return "motorbike";
+    if (title.includes("연애") || title.includes("love style")) return "love-style";
+    if (title.includes("소비") || title.includes("consumption")) return "consumption-style";
+    if (title.includes("인간관계") || title.includes("관계") || title.includes("relationship")) return "relationship-style";
+    if (title.includes("여행") || title.includes("travel")) return "travel-style";
+    if (title.includes("회사") || title.includes("office")) return "office-character";
+    if (title.includes("스트레스") || title.includes("stress")) return "stress-relief";
+    if (title.includes("덕질") || title.includes("fandom")) return "fandom-style";
+    if (title.includes("mbti 성격") || title.includes("personality")) return "default";
+    return "generic";
+}
+
+function buildManagedResultImageUrl(test, mbti) {
+    const type = String(mbti || "").toUpperCase();
+    if (!MBTI_TYPES.includes(type)) {
+        return "";
+    }
+    const theme = inferThemeSlugFromTest(test);
+    return `${getResultImageBaseUrl()}/${theme}/${type}.png`;
+}
+
+function isManagedResultImageUrl(url) {
+    const value = String(url || "").trim().toLowerCase();
+    return value.includes("/resource/result-images/");
+}
+
+function resolveResultImageUrl(test, mbti, configImage, fallbackImage) {
+    const fallbackManaged = buildManagedResultImageUrl(test, mbti);
+    const preferred = String(configImage || "").trim();
+    if (!preferred) {
+        return fallbackManaged || String(fallbackImage || "").trim();
+    }
+    if (isManagedResultImageUrl(preferred)) {
+        return fallbackManaged || preferred;
+    }
+    return preferred;
+}
+
 function resolveMatchImagePlaceholders(rawText, resultSettings) {
     const source = String(rawText || "");
     if (!source) {
@@ -915,7 +968,7 @@ function resolveMatchImagePlaceholders(rawText, resultSettings) {
     return source.replace(/\{([EI][NS][TF][JP])-이미지\}/gi, (full, typeKey) => {
         const mbti = String(typeKey || "").toUpperCase();
         const config = settings[mbti] && typeof settings[mbti] === "object" ? settings[mbti] : {};
-        const imageUrl = String(config.image || "").trim();
+        const imageUrl = resolveResultImageUrl(currentTest, mbti, config.image, "");
         if (!imageUrl) {
             return "";
         }
@@ -1315,7 +1368,7 @@ function showResult() {
     updateInsightsTabs(renderRecentResults());
 
     if (resultGuideImageEl) {
-        const resultImageUrl = String(resultConfig.image || currentTest.resultImage || "").trim();
+        const resultImageUrl = resolveResultImageUrl(currentTest, mbtiType, resultConfig.image, currentTest.resultImage);
         resultGuideImageEl.onerror = () => {
             resultGuideImageEl.removeAttribute("src");
             resultGuideImageEl.hidden = true;
